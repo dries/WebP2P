@@ -1,0 +1,38 @@
+<html>
+<head>
+<title>Object test</title>
+<script>
+var cp;
+function pluginLoaded() {
+	window.ConnectionPeer = function(config) {
+		return document.getElementById('plugin').createConnectionPeer(config);
+	}
+	cp = new ConnectionPeer('');
+	cp.getLocalConfiguration(function(configuration) {
+		document.getElementById('local_sdp').innerHTML = configuration;
+		});
+}
+function addRemoteConfiguration() {
+	var config = document.getElementById('remote_sdp').value;
+	cp.addRemoteConfiguration(config);
+}
+</script>
+</head>
+<body>
+
+<p>Local SDP:</p>
+<pre id="local_sdp"></pre>
+
+<p>Remote SDP:</p>
+<textarea id="remote_sdp" style="width: 400px; height: 200px;"></textarea>
+<br />
+<input type="button" value="Add Remote SDP" onclick="addRemoteConfiguration();" />
+<br />
+
+
+<object id="plugin" type="application/x-WebP2P" width="300" height="300">
+    <param name="onload" value="pluginLoaded" />
+</object><br />
+
+</body>
+</html>	
