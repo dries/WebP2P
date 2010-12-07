@@ -20,7 +20,7 @@
  * Description: Implementation of the SessionDescriptor class which implements
  *              a generic SDP message.
  * See also:    http://tools.ietf.org/html/rfc4566
- */
+**/
 
 /* WebP2P includes */
 #include "SessionDescriptor.hpp"
@@ -38,16 +38,26 @@ SessionDescriptor::SessionDescriptor(const std::string& sdpString)
     string::const_iterator end   = sdpString.end();
     SessionDescriptorGrammar sdpGrammar;
     bool success;
+    
+    std::cout << "Attempting to parse the following SDP string:\n"
+              << sdpString;
 
     try {
         success = parse(begin, end, sdpGrammar);
-    } catch (ParseException ex) {
+    } catch (std::exception ex) {
+        std::cout << "Parse exception: " << ex.what() << "\n";
     }
     bool fullMatch = (begin == end);
-    if(success)
-    { /* match found */ }
-    if(fullMatch)
-    { /* full match */ }
+
+    if(fullMatch) {
+        std::cout << "Full match found!\n";
+    }
+    else if(success) { 
+        std::cout << "Partial match found!\n";
+    }
+    else {
+        std::cout << "No match found!\n";
+    }
 }
 
 SessionDescriptor::~SessionDescriptor() {

@@ -25,22 +25,22 @@
 #include "ABNFCoreGrammar.hpp"
 
 ABNFCoreGrammar::ABNFCoreGrammar() {
-    using           boost::spirit::qi::ascii::char_;
-    using namespace boost::spirit::qi::ascii;
+    using           boost::spirit::qi::iso8859_1::char_;
+    using namespace boost::spirit::qi::iso8859_1;
     using namespace boost::spirit::qi;
     using namespace boost::spirit;
 
     /* Core rules: from RFC 4234 */
-    SP     = char_('\x20');
-    CR     = char_('\x0D');
-    LF     = char_('\x0A');
-    HTAB   = char_('\x09');
-    DQUOTE = char_('\x22');
+    SP     = byte_('\x20');
+    CR     = byte_('\x0D');
+    LF     = byte_('\x0A');
+    HTAB   = byte_('\x09');
+    DQUOTE = byte_('\x22');
     CHAR   = char_('\x01', '\x7F');
     VCHAR  = char_('\x21', '\x7E');
     DIGIT  = char_('\x30', '\x39');
     BIT    = char_('\x30', '\x31');
-    OCTET  = char_('\x00', '\xFF');
+    OCTET  = byte_;
     CTL    = char_('\x00', '\x1F') | char_('\x7F');
     ALPHA  = char_('\x41', '\x5A') | char_('\x61', '\x7A');
     HEXDIG = DIGIT | char_('A', 'F');

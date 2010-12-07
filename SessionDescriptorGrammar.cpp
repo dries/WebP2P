@@ -41,9 +41,12 @@
 
 SessionDescriptorGrammar::SessionDescriptorGrammar() :
     SessionDescriptorGrammar::base_type(session_description) {
-    using           boost::spirit::qi::ascii::string;
-    using           boost::spirit::qi::ascii::char_;
-    using namespace boost::spirit::qi::ascii;
+    /* UTF-8 not supported in spirit::qi, fallback to iso-8859-1 so at least
+     * the entire byte range is accepted.
+    **/
+    using           boost::spirit::qi::iso8859_1::string;
+    using           boost::spirit::qi::iso8859_1::char_;
+    using namespace boost::spirit::qi::iso8859_1;
     using namespace boost::spirit::qi;
     using namespace boost::phoenix;
     using namespace boost::phoenix::local_names;
@@ -55,15 +58,11 @@ SessionDescriptorGrammar::SessionDescriptorGrammar() :
         let(_s = construct<std::string>())
         [
             _s += val("Error! Expecting "),
-            //_s += _4,
+            //_s += _4, // TODO: figure out why this doesn't work
             _s += val(" here: \""),
             _s += construct<std::string>(_3, _2),
             _s += val("\"\n"),
-            throw_(construct<ParseException>(_s))/*
-            let(_x = construct<ParseException>(_s))
-            [
-                throw_(_x)
-            ]*/
+            throw_(construct<ParseException>(_s))
         ]
     );
     
@@ -91,11 +90,11 @@ SessionDescriptorGrammar::SessionDescriptorGrammar() :
                         >> sess_version >> abnf.SP
                         >> nettype >> abnf.SP
                         >> addrtype >> abnf.SP
-                        >> unicast_address >> (abnf.CRLF | abnf.LF);
+                        >> sdp.unicast_address >> (abnf.CRLF | abnf.LF);
     session_name_field   =   lit("s=")
-                        >> text >> (abnf.CRLF | abnf.LF);
+                        >> sdp.text >> (abnf.CRLF | abnf.LF);
     information_field    = -(lit("i=")
-                        >> text >> (abnf.CRLF | abnf.LF));
+                        >> sdp.text >> (abnf.CRLF | abnf.LF));
     uri_field            = -(lit("u=")
                         >> uri >> (abnf.CRLF | abnf.LF));
     email_fields         = *(lit("e=")
@@ -136,45 +135,46 @@ SessionDescriptorGrammar::SessionDescriptorGrammar() :
                         >> attribute_fields);
     media_field          =   lit("m=")
                         >> media >> abnf.SP 
-                        >> port >> -(lit('/') >> integer) >> abnf.SP 
+                        >> port >> -(lit('/') >> sdp.integer) >> abnf.SP 
                         >> proto >> +(abnf.SP >> fmt) >> (abnf.CRLF | abnf.LF);                           
 
     /* sub-rules of 'o=' */
-    username             = non_ws_string;
+    username             = sdp.non_ws_string.alias();
                         // pretty wide definition, but doesn't include space
     sess_id              = +abnf.DIGIT;
                         // should be unique for this username/host
     sess_version         = +abnf.DIGIT;
-    nettype              = token;
+    nettype              = sdp.token.alias();
                         // typically "IN"
-    addrtype             = token;
+    addrtype             = sdp.token.alias();
                         // typically "IP4" or "IP6"
 
     /* sub-rules of 'u=' */
     uri                  = URI_reference; // see RFC 3986
 
     /* sub-rules of 'e=', see RFC 2822 for definitions */
-    email_address        = address_and_comment 
-                         | dispname_and_address
+    email_address        = dispname_and_address
+                         | address_and_comment
                          | addr_spec;
     address_and_comment  = addr_spec >> +abnf.SP 
-                        >> char_('(') >> +email_safe >> char_(')');
-    dispname_and_address = +email_safe >> +abnf.SP
+                        >> char_('(') >> +sdp.email_safe >> char_(')');
+    dispname_and_address = +sdp.email_safe >> +abnf.SP
                         >> char_('<') >> addr_spec >> char_('>');
 
     /* sub-rules of 'p=' */
     phone_number         = (phone >> *abnf.SP >> char_('(') 
-                        >> +email_safe >> char_(')')) 
-                         | (+email_safe >> char_('<') >> phone >> char_('>'))
+                        >> +sdp.email_safe >> char_(')')) 
+                         | (+sdp.email_safe >> char_('<') 
+                        >> phone >> char_('>'))
                          | phone;
     phone                = -char_('+') >> abnf.DIGIT 
                         >> +(abnf.SP | char_('-') | abnf.DIGIT);
 
     /* sub-rules of 'c=' */
-    connection_address   =  multicast_address | unicast_address;
+    connection_address   =  sdp.multicast_address | sdp.unicast_address;
 
     /* sub-rules of 'b=' */
-    bwtype               = token;
+    bwtype               = sdp.token.alias();
     bandwidth            = +abnf.DIGIT;
 
     /* sub-rules of 't=' */
@@ -185,10 +185,10 @@ SessionDescriptorGrammar::SessionDescriptorGrammar() :
      */
     start_time           = time | char_('0');
     stop_time            = time | char_('0');
-    time                 = POS_DIGIT >> repeat(9, inf)[abnf.DIGIT];
+    time                 = sdp.POS_DIGIT >> repeat(9, inf)[abnf.DIGIT];
 
     /* sub-rules of 'r=' and 'z=' */
-    repeat_interval      = POS_DIGIT >> *abnf.DIGIT >> -fixed_len_time_unit;
+    repeat_interval      = sdp.POS_DIGIT >> *abnf.DIGIT >> -fixed_len_time_unit;
     typed_time           = +abnf.DIGIT >> -fixed_len_time_unit;
     fixed_len_time_unit  = char_('d') | char_('h') | char_('m') | char_('s');
 
@@ -208,87 +208,19 @@ SessionDescriptorGrammar::SessionDescriptorGrammar() :
 
     /* sub-rules of 'a=' */
     attribute            = (att_field >> char_(':') >> att_value) | att_field;
-    att_field            = token;
-    att_value            = byte_string;
+    att_field            = sdp.token.alias();
+    att_value            = sdp.byte_string.alias();
 
     /* sub-rules of 'm=' */
-    media                = token;
+    media                = sdp.token.alias();
                         // typically "audio", "video", "text", or "application"
-    fmt                  = token;
+    fmt                  = sdp.token.alias();
                         // typically an RTP payload type for audio and video
                         // media
-    proto                = token >> *(char_('/') >> token); 
+    proto                = sdp.token >> *(char_('/') >> sdp.token); 
                         // typically "RTP/AVP" or "udp"
     port                 = +abnf.DIGIT;
 
-    /* generic sub-rules: addressing */
-    unicast_address      = IP4_address | IP6_address | FQDN | extn_addr;
-    multicast_address    = IP4_multicast | IP6_multicast | FQDN | extn_addr;
-    IP4_multicast        = m1 >> repeat(3)[char_('.') >> decimal_uchar]
-                        >> char_('/') >> ttl >> -(char_('/') >> integer);
-                        // IPv4 multicast addresses may be in the
-                        // range 224.0.0.0 to 239.255.255.255
-    m1                   = (char_('2') >> char_('2') >> char_('4', '9'))
-                         | (char_('2') >> char_('3') > abnf.DIGIT);
-    IP6_multicast        = hexpart >> -(char_('/') >> integer);
-                        // IPv6 address starting with FF
-    bm                   = abnf.DIGIT
-                         | (POS_DIGIT >> abnf.DIGIT) 
-                         | (char_('1') >> repeat(2)[abnf.DIGIT]) 
-                         | (char_('2') >> char_('0', '1') >> abnf.DIGIT) 
-                         | (char_('2') >> char_('2') >> char_('0', '4'));
-    ttl                  = (POS_DIGIT >> repeat(0, 2)[abnf.DIGIT]) 
-                         | char_('0');
-    FQDN                 = repeat(4, inf)[alpha_numeric 
-                                                 | char_('-') | char_('.')];
-                        // fully qualified domain name as specified
-                        // in RFC 1035 (and updates)
-    IP4_address          = b1 >> repeat(3)[char_('.') >> decimal_uchar];
-    b1                   = decimal_uchar;
-                        // less than "224"
-
-    /* The following is consistent with RFC 2373, Appendix B. */
-    IP6_address          = hexpart >> -(char_(':') >> IP4_address);
-    hexpart              = hexseq 
-                         | (hexseq  >> char_(':') >> char_(':') >> -hexseq)
-                         | (char_(':') >> char_(':') >> -hexseq);
-    hexseq               = hex4 >> *(lit(':') >> hex4);
-    hex4                 = repeat(1,4)[abnf.HEXDIG];
-
-    /* generic for other address families */
-    extn_addr            = non_ws_string;
-
-
-    /* generic sub-rules: datatypes */
-    text                 = byte_string;
-    byte_string          = +(char_('\x01', '\x09')
-                         | char_('\x0B', '\x0C') 
-                         | char_('\x0E', '\xFF'));
-    non_ws_string        = +(abnf.VCHAR | char_('\x80', '\xFF'));
-    token_char           = char_('\x21') 
-                         | char_('\x23', '\x27') 
-                         | char_('\x2A', '\x2B')
-                         | char_('\x2D', '\x2E')
-                         | char_('\x30', '\x39')
-                         | char_('\x41', '\x5A')
-                         | char_('\x5E', '\x7E');
-    token                = +(token_char);
-    email_safe           = char_('\x01', '\x09') 
-                         | char_('\x0B', '\x0C')
-                         | char_('\x0E', '\x27')
-                         | char_('\x2A', '\x3B')
-                         | char_('\x3D')
-                         | char_('\x3F', '\xFF');
-    integer              = POS_DIGIT >> *abnf.DIGIT;
-
-    /* generic sub-rules: primitives */
-    alpha_numeric        = abnf.ALPHA | abnf.DIGIT;
-    POS_DIGIT            = char_('\x31', '\x39');
-    decimal_uchar        = abnf.DIGIT
-                         | (POS_DIGIT >> abnf.DIGIT)
-                         | (char_('1') >> repeat(2)[abnf.DIGIT]) 
-                         | (char_('2') >> char_('0', '4') >> abnf.DIGIT) 
-                         | (char_('2') >> char_('5') >> char_('0', '4'));
 
     /* naming */
     session_description.name("session-description");
@@ -299,17 +231,17 @@ SessionDescriptorGrammar::SessionDescriptorGrammar() :
     uri_field.name("uri-field");
     email_fields.name("email-fields");
     phone_fields.name("phone-fields");
-    connection_field.name("connection_field");
-    bandwidth_fields.name("bandwidth_fields");
-    time_fields.name("time_fields");
-    repeat_fields.name("repeat_fields");
-    zone_adjustments.name("zone_adjustments");
-    key_field.name("key_field");
-    attribute_fields.name("attribute_fields");
-    media_descriptions.name("media_descriptions");
-    media_field.name("media_field");
+    connection_field.name("connection-field");
+    bandwidth_fields.name("bandwidth-fields");
+    time_fields.name("time-fields");
+    repeat_fields.name("repeat-fields");
+    zone_adjustments.name("zone-adjustments");
+    key_field.name("key-field");
+    attribute_fields.name("attribute-fields");
+    media_descriptions.name("media-descriptions");
+    media_field.name("media-field");
     username.name("username");
-    sess_id.name("sess_id");
+    sess_id.name("sess-id");
     sess_version.name("sess-version");
     nettype.name("nettype");
     addrtype.name("addrtype");
@@ -319,50 +251,25 @@ SessionDescriptorGrammar::SessionDescriptorGrammar() :
     dispname_and_address.name("dispname-and-address");
     phone_number.name("phone-number");
     phone.name("phone");
-    connection_address.name("connection_address");
+    connection_address.name("connection-address");
     bwtype.name("bwtype");
     bandwidth.name("bandwidth");
     start_time.name("bandwidth");
-    stop_time.name("stop_time");
+    stop_time.name("stop-time");
     time.name("time");
-    repeat_interval.name("repeat_interval");
-    typed_time.name("typed_time");
-    fixed_len_time_unit.name("typed_time");
-    key_type.name("key_type");
-    base64_char.name("base64_char");
-    base64_unit.name("base64_unit");
-    base64_pad.name("base64_pad");
+    repeat_interval.name("repeat-interval");
+    typed_time.name("typed-time");
+    fixed_len_time_unit.name("typed-time");
+    key_type.name("key-type");
+    base64_char.name("base64-char");
+    base64_unit.name("base64-unit");
+    base64_pad.name("base64-pad");
     base64.name("base64");
     attribute.name("attribute");
-    att_field.name("att_field");
-    att_value.name("att_value");
+    att_field.name("att-field");
+    att_value.name("att-value");
     media.name("media");
     fmt.name("media");
     proto.name("proto");
     port.name("port");
-    unicast_address.name("unicast_address");
-    multicast_address.name("multicast_address");
-    IP4_multicast.name("IP4_multicast");
-    m1.name("m1");
-    IP6_multicast.name("IP6_multicast");
-    bm.name("bm");
-    ttl.name("ttl");
-    FQDN.name("FQDN");
-    IP4_address.name("IP4_address");
-    b1.name("b1");
-    IP6_address.name("IP6_address");
-    hexpart.name("hexpart");
-    hexseq.name("hexseq");
-    hex4.name("hex4");
-    extn_addr.name("extn_addr");
-    text.name("text");
-    byte_string.name("byte_string");
-    non_ws_string.name("non_ws_string");
-    token_char.name("token_char");
-    token.name("token");
-    email_safe.name("email_safe");
-    integer.name("integer");
-    alpha_numeric.name("alpha_numeric");
-    POS_DIGIT.name("POS_DIGIT");
-    decimal_uchar.name("decimal_uchar");
 }

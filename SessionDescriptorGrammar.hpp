@@ -28,6 +28,7 @@
 #include "ABNFCoreGrammar.hpp"
 #include "AddrSpecGrammar.hpp"
 #include "URIReferenceGrammar.hpp"
+#include "SessionDescriptorGenericGrammar.hpp"
  
 class ParseException : std::exception {
 private:
@@ -46,9 +47,10 @@ public:
 struct SessionDescriptorGrammar :
     boost::spirit::qi::grammar<std::string::const_iterator> {
     /* external grammars */
-    ABNFCoreGrammar     abnf;
-    AddrSpecGrammar     addr_spec;
-    URIReferenceGrammar URI_reference;
+    ABNFCoreGrammar                 abnf;
+    AddrSpecGrammar                 addr_spec;
+    URIReferenceGrammar             URI_reference;
+    SessionDescriptorGenericGrammar sdp;
     
     /* rules for this grammar */
     boost::spirit::qi::rule<std::string::const_iterator>
@@ -61,10 +63,7 @@ struct SessionDescriptorGrammar :
         connection_address, bwtype, bandwidth, start_time, stop_time, time,
         repeat_interval, typed_time, fixed_len_time_unit, key_type, base64_char,
         base64_unit, base64_pad, base64, attribute, att_field, att_value, media,
-        fmt, proto, port, unicast_address, multicast_address, IP4_multicast,
-        m1, IP6_multicast, bm, ttl, FQDN, IP4_address, b1, IP6_address, hexpart,
-        hexseq, hex4, extn_addr, text, byte_string, non_ws_string, token_char,
-        token, email_safe, integer, alpha_numeric, POS_DIGIT, decimal_uchar;
+        fmt, proto, port;
 
     /* start symbol for this grammar */
     boost::spirit::qi::rule<std::string::const_iterator/*, session_descriptor*/>

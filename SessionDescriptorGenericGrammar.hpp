@@ -14,11 +14,11 @@
  * You should have received a copy of the GNU General Public License
  * along with WebP2P.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Filename:    ABNFCoreGrammar.hpp
+ * Filename:    SessionDescriptorGenericGrammar.hpp
  * Author(s):   Dries Staelens
  * Copyright:   Copyright (c) 2010 Dries Staelens
- * Description: Definition for the RFC 4234 ABNF core grammar rules.
- * See also:    http://tools.ietf.org/html/rfc4234#appendix-B.1
+ * Description: Definition for the RFC 4566 SDP grammar rules.
+ * See:         http://tools.ietf.org/html/rfc4566
  */
 
 #pragma once
@@ -31,11 +31,19 @@
 #include <boost/spirit/include/qi_repeat.hpp>
 #include <boost/spirit/include/qi_binary.hpp>
 
-struct ABNFCoreGrammar {
+/* WebP2P includes */
+#include "ABNFCoreGrammar.hpp"
+
+struct SessionDescriptorGenericGrammar {
+    /* external grammars */
+    ABNFCoreGrammar                 abnf;
+
     /* rules for this grammar */
     boost::spirit::qi::rule<std::string::const_iterator>
-        CHAR, VCHAR, DIGIT, BIT, OCTET, CTL, ALPHA,
-        SP, CR, LF, HTAB, DQUOTE, HEXDIG, WSP, CRLF, LWSP;
+        unicast_address, multicast_address, IP4_multicast, m1, IP6_multicast,
+        bm, ttl, FQDN, IP4_address, b1, IP6_address, hexpart, hexseq, hex4,
+        extn_addr, text, byte_string, non_ws_string, token_char, token,
+        email_safe, integer, alpha_numeric, POS_DIGIT, decimal_uchar;
 
-    ABNFCoreGrammar();
+    SessionDescriptorGenericGrammar();
 };

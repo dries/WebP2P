@@ -26,8 +26,8 @@
 
 URIReferenceGrammar::URIReferenceGrammar() :
     URIReferenceGrammar::base_type(uri_reference) {
-    using           boost::spirit::qi::ascii::char_;
-    using namespace boost::spirit::qi::ascii;
+    using           boost::spirit::qi::iso8859_1::char_;
+    using namespace boost::spirit::qi::iso8859_1;
     using namespace boost::spirit::qi;
     using namespace boost::spirit;
 
