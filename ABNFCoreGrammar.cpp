@@ -19,7 +19,7 @@
  * Copyright:   Copyright (c) 2010 Dries Staelens
  * Description: Implementation for the RFC 4234 ABNF core grammar rules.
  * See also:    http://tools.ietf.org/html/rfc4234#appendix-B.1
- */
+**/
 
 /* WebP2P includes */
 #include "ABNFCoreGrammar.hpp"

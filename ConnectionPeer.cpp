@@ -19,7 +19,7 @@
  * Copyright:   Copyright (c) 2010 Dries Staelens
  * Description: Implementation for the class that implements the javascript
  *              ConnectionPeer object.
- */
+**/
 
 /* Boost includes */
 #include <boost/make_shared.hpp>

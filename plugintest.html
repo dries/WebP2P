@@ -16,9 +16,26 @@ function addRemoteConfiguration() {
 	var config = document.getElementById('remote_sdp').value;
 	cp.addRemoteConfiguration(config);
 }
+function runRegressionTests() {
+	document.getElementById('plugin').createRegressionTests().runTests(
+		function(name, res) {
+			document.getElementById('test_results').innerHTML
+				+= '<tr><td><pre>'
+				+ name
+				+ '</pre></td><td><pre style="color: '
+				+ ((res == 'SUCCEEDED') ? 'green' : 'red')
+				+ ';">'
+				+ res
+				+ '</pre></td></tr>';
+		});
+}
 </script>
 </head>
 <body>
+<table id="test_results"><thead><td>Regression test name</td><td>Result</td></thead></table>
+<br />
+<input type="button" value="Run regression tests" onclick="runRegressionTests()" />
+<br />
 
 <p>Local SDP:</p>
 <pre id="local_sdp"></pre>
@@ -28,7 +45,6 @@ function addRemoteConfiguration() {
 <br />
 <input type="button" value="Add Remote SDP" onclick="addRemoteConfiguration();" />
 <br />
-
 
 <object id="plugin" type="application/x-WebP2P" width="300" height="300">
     <param name="onload" value="pluginLoaded" />

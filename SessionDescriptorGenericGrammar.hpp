@@ -19,7 +19,7 @@
  * Copyright:   Copyright (c) 2010 Dries Staelens
  * Description: Definition for the RFC 4566 SDP grammar rules.
  * See:         http://tools.ietf.org/html/rfc4566
- */
+**/
 
 #pragma once
 

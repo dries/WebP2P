@@ -19,7 +19,7 @@
  * Copyright:   Copyright (c) 2010 Dries Staelens
  * Description: Implementation for the RFC 2822 addr-spec grammar rules.
  * See also:    http://tools.ietf.org/html/rfc2822#section-3
- */
+**/
 
 /* WebP2P includes */
 #include "AddrSpecGrammar.hpp"
@@ -46,15 +46,15 @@ AddrSpecGrammar::AddrSpecGrammar() :
     NO_WS_CTL      = char_('\x01', '\x08') | char_('\x0B', '\x0C')
                    | char_('\x0E', '\x1F') | char_('\x7F');
     text           = char_('\x01', '\x09') | char_('\x0B', '\x0C') 
-                   | char_('\x0E', '\x1F') | obs_text;
+                   | char_('\x0E', '\x1F')/* | obs_text*/;
     specials       = char_('(') | char_(')') | char_('<') | char_('>')
                    | char_('[') | char_(']') | char_(':') | char_(';')
                    | char_('@') | char_('\\') | char_(',') | char_('.') 
                    | abnf.DQUOTE;
 
-    quoted_pair    = (char_('\\') >> text) | obs_qp;
+    quoted_pair    = (char_('\\') >> text)/* | obs_qp*/;
 
-    FWS            = (-(*abnf.WSP >> abnf.CRLF) >> +abnf.WSP) | obs_FWS;
+    FWS            = (-(*abnf.WSP >> abnf.CRLF) >> +abnf.WSP)/* | obs_FWS*/;
     ctext          = NO_WS_CTL 
                    | char_('\x21', '\x27') 
                    | char_('\x2A', '\x5B') 
@@ -99,7 +99,7 @@ AddrSpecGrammar::AddrSpecGrammar() :
                   >> char_(']')
                   >> -CFWS;
 
-    domain         = dot_atom | domain_literal | obs_domain;
-    local_part     = dot_atom | quoted_string | obs_local_part;
+    domain         = dot_atom | domain_literal/* | obs_domain*/;
+    local_part     = dot_atom | quoted_string/* | obs_local_part*/;
     addr_spec      = local_part >> char_('@') >> domain;
 }

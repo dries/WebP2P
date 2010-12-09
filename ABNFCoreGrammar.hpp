@@ -19,17 +19,26 @@
  * Copyright:   Copyright (c) 2010 Dries Staelens
  * Description: Definition for the RFC 4234 ABNF core grammar rules.
  * See also:    http://tools.ietf.org/html/rfc4234#appendix-B.1
- */
+**/
 
 #pragma once
 
 /* STL includes */
 #include <string>
+#include <map>
 
 /* Boost includes */
 #include <boost/spirit/include/qi.hpp>
 #include <boost/spirit/include/qi_repeat.hpp>
 #include <boost/spirit/include/qi_binary.hpp>
+#include <boost/spirit/home/phoenix/core.hpp>
+#include <boost/spirit/home/phoenix/function.hpp>
+#include <boost/spirit/home/phoenix/operator.hpp>
+#include <boost/spirit/home/phoenix/object.hpp>
+#include <boost/spirit/home/phoenix/scope.hpp>
+#include <boost/spirit/home/phoenix/bind.hpp>
+
+using namespace boost::phoenix;
 
 struct ABNFCoreGrammar {
     /* rules for this grammar */

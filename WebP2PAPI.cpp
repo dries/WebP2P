@@ -31,11 +31,14 @@
 /* WebP2P includes */
 #include "WebP2PAPI.hpp"
 #include "ConnectionPeer.hpp"
+#include "RegressionTests.hpp"
 
 WebP2PAPI::WebP2PAPI(WebP2PPtr plugin, FB::BrowserHostPtr host)
 	: m_plugin(plugin), m_host(host) {
     registerMethod("createConnectionPeer", 
     	make_method(this, &WebP2PAPI::createConnectionPeer));
+    registerMethod("createRegressionTests",
+        make_method(this, &WebP2PAPI::createRegressionTests));
 }
 
 WebP2PAPI::~WebP2PAPI() {
@@ -55,3 +58,7 @@ FB::JSAPIPtr WebP2PAPI::createConnectionPeer(
     	boost::make_shared<ConnectionPeer>(serverConfiguration));
 }
 
+FB::JSAPIPtr WebP2PAPI::createRegressionTests() {
+    return FB::JSAPIPtr(
+        boost::make_shared<RegressionTests>());
+}

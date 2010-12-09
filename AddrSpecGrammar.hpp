@@ -19,7 +19,7 @@
  * Copyright:   Copyright (c) 2010 Dries Staelens
  * Description: Definition for the RFC 2822 addr-spec grammar rules.
  * See also:    http://tools.ietf.org/html/rfc2822#section-3
- */
+**/
 
 #pragma once
 

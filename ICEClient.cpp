@@ -19,7 +19,7 @@
  * Copyright:   Copyright (c) 2010 Dries Staelens
  * Description: Implementation for the class that implements a simplified view
  *              of the PJICE library.
- */
+**/
 
 /* STL includes */
 #include <sstream>

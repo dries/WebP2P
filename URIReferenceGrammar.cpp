@@ -19,7 +19,7 @@
  * Copyright:   Copyright (c) 2010 Dries Staelens
  * Description: Implementation for the RFC 3986 uri-reference grammar rules.
  * See also:    http://tools.ietf.org/html/rfc3986#section-4.1
- */
+**/
 
 /* WebP2P includes */
 #include "URIReferenceGrammar.hpp"

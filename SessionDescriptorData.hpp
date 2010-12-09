@@ -18,7 +18,7 @@
  * Author(s):   Dries Staelens
  * Copyright:   Copyright (c) 2010 Dries Staelens
  * Description: Description of the data structure for SDP.
- */
+**/
 
 /* STL includes */
 #include <string>

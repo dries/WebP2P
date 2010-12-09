@@ -19,7 +19,7 @@
  * Copyright:   Copyright (c) 2010 Dries Staelens
  * Description: Header for the class that implements a simplified view of the
  *              PJICE library.
- */
+**/
 
 /* STL headers */
 #include <string>

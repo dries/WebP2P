@@ -19,7 +19,7 @@
  * Copyright:   Copyright (c) 2010 Dries Staelens
  * Description: Definition for the class that implements the javascript
  *              ConnectionPeer object.
- */
+**/
 
 /* firebreath headers */
 #include "JSAPIAuto.h"
