@@ -85,12 +85,12 @@ struct Origin {
 		addressType(IP4),
 		unicastAddress()
 		{}
-	std::string    username;
-	uint64_t       sessionID;
-	uint64_t       sessioVersion;
-	NetType        netType;
-	AddressType    addressType;
-	UnicastAddress unicastAddress;
+	std::string        username;
+	unsigned long long sessionID;
+	unsigned long long sessioVersion;
+	NetType            netType;
+	AddressType        addressType;
+	UnicastAddress     unicastAddress;
 };
 
 struct ConnectionData {
@@ -121,8 +121,8 @@ struct Timing {
 		stopTime(0),
 		repeats()
 		{}
-	uint64_t                  startTime;
-	uint64_t                  stopTime;
+	unsigned long long startTime;
+	unsigned long long stopTime;
     
     /* r= */
         struct RepeatTimes {
@@ -131,9 +131,9 @@ struct Timing {
             activeDuration(0),
             offsetsFromStartTime()
             {}
-        uint64_t              repeatInterval;
-        uint64_t              activeDuration;
-        std::vector<uint64_t> offsetsFromStartTime;
+        unsigned long long              repeatInterval;
+        unsigned long long              activeDuration;
+        std::vector<unsigned long long> offsetsFromStartTime;
     };
 
     std::vector<RepeatTimes>  repeats;
@@ -145,7 +145,7 @@ struct TimeZones {
     TimeZones() :
         adjustmentTimeAndOffsets()
         {}
-    std::vector<std::pair<uint64_t, int64_t> > adjustmentTimeAndOffsets;
+    std::vector<std::pair<unsigned long long, long long> > adjustmentTimeAndOffsets;
 };
 
 struct EncryptionKey {
@@ -201,7 +201,7 @@ struct SessionDescriptorData {
 		mediaDefinitions() {}
         
     /* v= */
-	uint64_t                           protocolVersion;
+	unsigned long long                 protocolVersion;
 
 	/* o= */
     Origin                             origin;
