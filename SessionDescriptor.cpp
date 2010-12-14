@@ -32,7 +32,7 @@ SessionDescriptor::SessionDescriptor() {
 SessionDescriptor::SessionDescriptor(const std::string& sdpString)
     throw(std::exception) {
     using namespace std;
-    using boost::spirit::qi::parse;
+    using namespace boost::spirit::qi;
 
     string::const_iterator begin = sdpString.begin();
     string::const_iterator end   = sdpString.end();
@@ -43,7 +43,7 @@ SessionDescriptor::SessionDescriptor(const std::string& sdpString)
               << sdpString;
 
     try {
-        success = parse(begin, end, sdpGrammar);
+        success = phrase_parse(begin, end, sdpGrammar, !byte_);
     } catch (std::exception ex) {
         std::cout << "Parse exception: " << ex.what() << "\n";
     }

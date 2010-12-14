@@ -78,8 +78,9 @@ SessionDescriptorGenericGrammar::SessionDescriptorGenericGrammar() {
                         // default is to interpret this as UTF8 text.
                         // ISO 8859-1 requires "a=charset:ISO-8859-1"
                         // session-level attribute to be used
-    byte_string          = +(!(byte_('\x00') | byte_('\x0A') | byte_('\x0D'))
-                        >> byte_);
+    byte_string          = +(char_('\x00', '\x09')
+                         |   char_('\x0B', '\x0C')
+                         |   char_('\x0E', '\xFF'));
     non_ws_string        = +(abnf.VCHAR | char_('\x80', '\xFF'));
                         // string of visible characters
     token_char           = char_('\x21') 
@@ -100,24 +101,13 @@ SessionDescriptorGenericGrammar::SessionDescriptorGenericGrammar() {
                         >> byte_;
                         // any byte except NUL, CR, LF, or the quoting
                         // characters ()<>
-    integer              = POS_DIGIT >> *abnf.DIGIT;
+    integer              = ulong_long;
 
     /* generic sub-rules: primitives */
     alpha_numeric        = abnf.ALPHA | abnf.DIGIT;
-    POS_DIGIT            = byte_('\x31') 
-                         | byte_('\x32')
-                         | byte_('\x33')
-                         | byte_('\x34')
-                         | byte_('\x35')
-                         | byte_('\x36')
-                         | byte_('\x37')
-                         | byte_('\x38')
-                         | byte_('\x39');
-    decimal_uchar        = (char_('2') >> char_('5') >> char_('0', '5'))
-                         | (char_('2') >> char_('0', '4') >> abnf.DIGIT)
-                         | (char_('1') >> abnf.DIGIT >> abnf.DIGIT)
-                         | (POS_DIGIT >> abnf.DIGIT)
-                         | abnf.DIGIT;
+    POS_DIGIT            = char_('1', '9');
+    uint_parser<unsigned char, 10, 1, 3> duParser;
+    decimal_uchar        = duParser;
 
     unicast_address.name("unicast-address");
     multicast_address.name("multicast-address");

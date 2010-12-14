@@ -171,7 +171,7 @@ SessionDescriptorGrammar::SessionDescriptorGrammar() :
                         >> +(abnf.SP | char_('-') | abnf.DIGIT);
 
     /* sub-rules of 'c=' */
-    connection_address   =  sdp.multicast_address | sdp.unicast_address;
+    connection_address   = sdp.unicast_address | sdp.multicast_address;
 
     /* sub-rules of 'b=' */
     bwtype               = sdp.token.alias();

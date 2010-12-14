@@ -67,6 +67,12 @@ struct GrammarTests {
         callback(testName, testResult);
     }
     template<typename F> static void runTests(F callback) {
+        runAddrSpecTests(callback);
+        runSessionDescriptorGenericGrammarTests(callback);
+        runSessionDescriptorGrammarTests(callback);
+    }
+    
+    template<typename F> static void runAddrSpecTests(F callback) {
         AddrSpecGrammar asg;
 
         grammarTest("addr-spec", "dries@pandion.im", asg.addr_spec, callback, true);
@@ -110,6 +116,58 @@ struct GrammarTests {
         grammarTest("!addr-spec", "! \"#$%(),/;<>[]`|@invalidCharsInLocal.org", asg.addr_spec, callback, false);
         grammarTest("!addr-spec", "invalidCharsInDomain@! \"#$%(),/;<>_[]`|.org", asg.addr_spec, callback, false);
 //        grammarTest("!addr-spec", "local@SecondLevelDomainNamesAreInvalidIfTheyAreLongerThan64Charactersss.org", asg.addr_spec, callback, false);
+    }
+    
+    template<typename F> static void runSessionDescriptorGenericGrammarTests(F callback) {
+        SessionDescriptorGenericGrammar sdgg;
+        /*
+        unicast_address, multicast_address, IP4_multicast, m1, IP6_multicast,
+        bm, ttl, FQDN, IP4_address, b1, IP6_address, hexpart, hexseq, hex4,
+        extn_addr, text, byte_string, non_ws_string, token_char, token,
+        email_safe, integer, alpha_numeric, POS_DIGIT, decimal_uchar;*/
+        
+        grammarTest("decimal-uchar", "0", sdgg.decimal_uchar, callback, true);
+        grammarTest("decimal-uchar", "127", sdgg.decimal_uchar, callback, true);
+        grammarTest("decimal-uchar", "255", sdgg.decimal_uchar, callback, true);
+        grammarTest("!decimal-uchar", "-1", sdgg.decimal_uchar, callback, false);
+        grammarTest("!decimal-uchar", "256", sdgg.decimal_uchar, callback, false);
+
+        grammarTest("unicast-address", "127.0.0.1", sdgg.unicast_address, callback, true);
+        grammarTest("unicast-address", "192.168.1.100", sdgg.unicast_address, callback, true);
+        grammarTest("unicast-address", "218.186.8.238", sdgg.unicast_address, callback, true);
+        grammarTest("unicast-address", "FE80::D69A:20FF:FE71:B84C", sdgg.unicast_address, callback, true);
+        grammarTest("unicast-address", "www.g00-gl3.com", sdgg.unicast_address, callback, true);
+
+        grammarTest("!multicast-address", "127.0.0.1", sdgg.multicast_address, callback, false);
+        grammarTest("!multicast-address", "192.168.1.100", sdgg.multicast_address, callback, false);
+        grammarTest("!multicast-address", "218.186.8.238", sdgg.multicast_address, callback, false);
+        grammarTest("multicast-address", "FE80::D69A:20FF:FE71:B84C", sdgg.multicast_address, callback, true);
+        grammarTest("multicast-address", "www.g00-gl3.com", sdgg.multicast_address, callback, true);
+    }
+    
+    template<typename F> static void runSessionDescriptorGrammarTests(F callback) {
+        /* proto_version, origin_field, session_name_field, information_field,
+        uri_field, email_fields, phone_fields, connection_field,
+        bandwidth_fields, time_fields, repeat_fields, zone_adjustments,
+        key_field, attribute_fields, media_descriptions, media_field, username,
+        sess_id, sess_version, nettype, addrtype, uri, email_address,
+        address_and_comment, dispname_and_address, phone_number, phone,
+        connection_address, bwtype, bandwidth, start_time, stop_time, time,
+        repeat_interval, typed_time, fixed_len_time_unit, key_type, base64_char,
+        base64_unit, base64_pad, base64, attribute, att_field, att_value, media,
+        fmt, proto, port; */
+        SessionDescriptorGrammar sdg;
+
+        grammarTest("media-field", "m=audio 50016 RTP/AVP 0\r\n", sdg.media_field, callback, true);
+        
+        grammarTest("connection-field", "c=IN IP4 218.186.177.16\r\n", sdg.connection_field, callback, true);
+        
+        grammarTest("connection-address", "218.186.177.16", sdg.connection_address, callback, true);
+        grammarTest("connection-address", "127.0.0.1", sdg.connection_address, callback, true);
+        grammarTest("connection-address", "192.168.1.100", sdg.connection_address, callback, true);
+        grammarTest("connection-address", "218.186.8.23", sdg.connection_address, callback, true);
+        grammarTest("connection-address", "FE80::D69A:20FF:FE71:B84C", sdg.connection_address, callback, true);
+        grammarTest("connection-address", "www.g00-gl3.com", sdg.connection_address, callback, true);
     }
 };
 
