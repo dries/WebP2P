@@ -32,74 +32,95 @@ AddrSpecGrammar::AddrSpecGrammar() :
     using namespace boost::spirit;
 
     // obsolete grammar which we still have to accept but should not generate
-    obs_qp          = char_('\\') >> char_('\x00', '\x7F');
-    obs_text        = *abnf.LF >> *abnf.CR 
-                   >> *(obs_char >> *abnf.LF >> *abnf.CR);
-    obs_char        = char_('\x00', '\x09')  // %d0-127 except CR and LF
-                    | char_('\x0B', '\x0C')  //
-                    | char_('\x0E', '\x7F'); //
-    obs_FWS         = +abnf.WSP >> *(abnf.CRLF >> +abnf.WSP);
-    obs_domain      = atom >> *(char_('.') >> atom);
-    obs_local_part  = word >> *(char_('.') >> word);
+    obs_qp          %= char_('\\') >> char_('\x00', '\x7F');
+    obs_text         = *abnf.LF[_val += _1] 
+                    >> *abnf.CR[_val += _1]
+                    >> *(obs_char[_val += _1]
+                      >> *abnf.LF[_val += _1]
+                      >> *abnf.CR[_val += _1]);
+    obs_char         = (char_('\x00', '\x09')  // %d0-127 except CR and LF
+                     |  char_('\x0B', '\x0C')  //
+                     |  char_('\x0E', '\x7F')) //
+                          [_val += _1];
+    obs_FWS          = +abnf.WSP[_val += _1]
+                    >> *(abnf.CRLF[_val += _1]
+                      >> +abnf.WSP[_val += _1]);
+    obs_domain      %= atom >> *(char_('.') >> atom);
+    obs_local_part  %= word >> *(char_('.') >> word);
 
     /* addr-spec: from RFC 2822 */
-    NO_WS_CTL      = char_('\x01', '\x08') | char_('\x0B', '\x0C')
-                   | char_('\x0E', '\x1F') | char_('\x7F');
-    text           = char_('\x01', '\x09') | char_('\x0B', '\x0C') 
-                   | char_('\x0E', '\x1F')/* | obs_text*/;
-    specials       = char_('(') | char_(')') | char_('<') | char_('>')
-                   | char_('[') | char_(']') | char_(':') | char_(';')
-                   | char_('@') | char_('\\') | char_(',') | char_('.') 
-                   | abnf.DQUOTE;
+    NO_WS_CTL       = (char_('\x01', '\x08')
+                    |  char_('\x0B', '\x0C')
+                    |  char_('\x0E', '\x1F')
+                    |  char_('\x7F'))
+                         [_val += _1];
+    text            = (char_('\x01', '\x09')
+                    |  char_('\x0B', '\x0C') 
+                    |  char_('\x0E', '\x1F'))
+                         [_val += _1];/* | obs_text[_val += _1]*/;
+    specials        = (char_('(') | char_(')' ) | char_('<') | char_('>')
+                    |  char_('[') | char_(']' ) | char_(':') | char_(';')
+                    |  char_('@') | char_('\\') | char_(',') | char_('.') 
+                    |  char_('"'))
+                         [_val += _1];
 
-    quoted_pair    = (char_('\\') >> text)/* | obs_qp*/;
+    quoted_pair    %= (char_('\\') >> text)/* | obs_qp*/;
 
-    FWS            = (-(*abnf.WSP >> abnf.CRLF) >> +abnf.WSP)/* | obs_FWS*/;
-    ctext          = NO_WS_CTL 
-                   | char_('\x21', '\x27') 
-                   | char_('\x2A', '\x5B') 
-                   | char_('\x5D', '\x7E');
-    ccontent       = ctext | quoted_pair | comment;
-    comment        = char_('(') 
-                  >> *(-FWS >> ccontent) 
-                  >> -FWS 
-                  >> char_(')');
-    CFWS           = *(-(FWS) >> comment) >> ((-(FWS) >> comment) | FWS);
+    FWS             = (-(*abnf.WSP[_val += _1] 
+                      >> abnf.CRLF[_val += _1])
+                    >> +abnf.WSP[_val += _1])/* | obs_FWS[_val += _1]*/;
+    ctext           = NO_WS_CTL[_val += _1]
+                    | char_('\x21', '\x27')[_val += _1]
+                    | char_('\x2A', '\x5B')[_val += _1]
+                    | char_('\x5D', '\x7E')[_val += _1];
+    ccontent       %= ctext | quoted_pair | comment;
+    comment         = char_('(')[_val += _1]
+                   >> *(-FWS[_val += _1] >> ccontent[_val += _1])
+                   >> -FWS[_val += _1]
+                   >> char_(')')[_val += _1];
+    CFWS            = *(-FWS[_val += _1] >> comment[_val += _1])
+                      >> ((-FWS[_val += _1] >> comment[_val += _1]) 
+                         | FWS[_val += _1]);
 
-    atext          = abnf.ALPHA | abnf.DIGIT | char_('!') | char_('#') 
-                   | char_('$') | char_('%') | char_('&') | char_('\'') 
-                   | char_('*') | char_('+') | char_('-') | char_('/') 
-                   | char_('=') | char_('?') | char_('^') | char_('_') 
-                   | char_('`') | char_('{') | char_('|') | char_('}') 
-                   | char_('~');
-    atom           = -CFWS >> +atext >> -CFWS;
-    dot_atom_text  = +atext >> *(char_('.') >> +atext);
-    dot_atom       = -CFWS >> dot_atom_text >> -CFWS;
+    atext           = (abnf.ALPHA | abnf.DIGIT)[_val += _1]
+                    | (char_('!') | char_('#') | char_('$') | char_('%')
+                      | char_('&') | char_('\'') | char_('*') | char_('+')
+                      | char_('-') | char_('/') | char_('=') | char_('?')
+                      | char_('^') | char_('_') | char_('`') | char_('{')
+                      | char_('|') | char_('}') | char_('~'))[_val += _1];
+    atom            = -CFWS[_val += _1] 
+                   >> +atext[_val += _1]
+                   >> -CFWS[_val += _1];
+    dot_atom_text   = +atext[_val += _1]
+                   >> *(char_('.')[_val += _1] >> +atext[_val += _1]);
+    dot_atom       %= -CFWS >> dot_atom_text >> -CFWS;
 
-    qtext          = NO_WS_CTL
-                   | char_('\x21')
-                   | char_('\x23', '\x5B')
-                   | char_('\x5D', '\x7E');
-    qcontent       = qtext | quoted_pair;
-    quoted_string  = -CFWS 
-                  >> abnf.DQUOTE 
-                  >> *(-FWS >> qcontent) 
-                  >> -FWS 
-                  >> abnf.DQUOTE 
-                  >> -CFWS;
+    qtext           = NO_WS_CTL[_val += _1]
+                    | char_('\x21')[_val += _1]
+                    | char_('\x23', '\x5B')[_val += _1]
+                    | char_('\x5D', '\x7E')[_val += _1];
+    qcontent       %= qtext | quoted_pair;
+    quoted_string   = -CFWS[_val += _1]
+                   >> abnf.DQUOTE[_val += _1]
+                   >> *(-FWS[_val += _1] >> qcontent[_val += _1]) 
+                   >> -FWS[_val += _1]
+                   >> abnf.DQUOTE[_val += _1]
+                   >> -CFWS[_val += _1];
 
-    word           = atom | quoted_string;
+    word           %= atom | quoted_string;
 
-    dtext          = NO_WS_CTL | char_('\x21', '\x5A')  | char_('\x5E', '\x7E');
-    dcontent       = dtext | quoted_pair;
-    domain_literal = -CFWS 
-                  >> char_('[') 
-                  >> *(-FWS >> dcontent) 
-                  >> -FWS 
-                  >> char_(']')
-                  >> -CFWS;
+    dtext           = NO_WS_CTL[_val += _1]
+                    | char_('\x21', '\x5A')[_val += _1]
+                    | char_('\x5E', '\x7E')[_val += _1];
+    dcontent       %= dtext | quoted_pair;
+    domain_literal  = -CFWS 
+                   >> char_('[')[_val += _1]
+                   >> *(-FWS[_val += _1] >> dcontent[_val += _1])
+                   >> -FWS[_val += _1]
+                   >> char_(']')[_val += _1]
+                   >> -CFWS[_val += _1];
 
-    domain         = dot_atom | domain_literal/* | obs_domain*/;
-    local_part     = dot_atom | quoted_string/* | obs_local_part*/;
-    addr_spec      = local_part >> char_('@') >> domain;
+    domain         %= dot_atom | domain_literal/* | obs_domain*/;
+    local_part     %= dot_atom | quoted_string/* | obs_local_part*/;
+    addr_spec      %= local_part >> lit("@") >> domain;
 }

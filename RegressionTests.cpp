@@ -29,6 +29,8 @@
 #include <boost/thread/thread.hpp>
 #include <boost/spirit/home/phoenix/container.hpp>
 
+#include <boost/spirit/include/karma_generate.hpp>
+
 /* Firebreath includes */
 #include "variant_list.h"
 

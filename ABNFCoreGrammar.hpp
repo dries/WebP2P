@@ -42,7 +42,7 @@ using namespace boost::phoenix;
 
 struct ABNFCoreGrammar {
     /* rules for this grammar */
-    boost::spirit::qi::rule<std::string::const_iterator>
+    boost::spirit::qi::rule<std::string::const_iterator, std::string()>
         CHAR, VCHAR, DIGIT, BIT, OCTET, CTL, ALPHA,
         SP, CR, LF, HTAB, DQUOTE, HEXDIG, WSP, CRLF, LWSP;
 

@@ -31,20 +31,21 @@ ABNFCoreGrammar::ABNFCoreGrammar() {
     using namespace boost::spirit;
 
     /* Core rules: from RFC 4234 */
-    SP     = byte_('\x20');
-    CR     = byte_('\x0D');
-    LF     = byte_('\x0A');
-    HTAB   = byte_('\x09');
-    DQUOTE = byte_('\x22');
-    CHAR   = char_('\x01', '\x7F');
-    VCHAR  = char_('\x21', '\x7E');
-    DIGIT  = char_('\x30', '\x39');
-    BIT    = char_('\x30', '\x31');
-    OCTET  = byte_;
-    CTL    = char_('\x00', '\x1F') | char_('\x7F');
-    ALPHA  = char_('\x41', '\x5A') | char_('\x61', '\x7A');
-    HEXDIG = DIGIT | char_('A', 'F');
-    WSP    = SP | HTAB;
-    CRLF   = CR > LF;
-    LWSP   = *(WSP | (CRLF > WSP));
+    SP     = char_('\x20')[_val += _1];
+    CR     = char_('\x0D')[_val += _1];
+    LF     = char_('\x0A')[_val += _1];
+    HTAB   = char_('\x09')[_val += _1];
+    DQUOTE = char_('\x22')[_val += _1];
+    CHAR   = char_('\x01', '\x7F')[_val += _1];
+    VCHAR  = char_('\x21', '\x7E')[_val += _1];
+    DIGIT  = char_('\x30', '\x39')[_val += _1];
+    BIT    = char_('\x30', '\x31')[_val += _1];
+    OCTET  = char_[_val += _1];
+    CTL    = (char_('\x00', '\x1F') | char_('\x7F'))[_val += _1];
+    ALPHA  = (char_('\x41', '\x5A') | char_('\x61', '\x7A'))[_val += _1];
+    HEXDIG = DIGIT[_val += _1]
+           | char_('A', 'F')[_val += _1];
+    WSP   %= (SP | HTAB);
+    CRLF  %= (CR > LF);
+    LWSP   = *(WSP[_val += _1] | (CRLF > WSP)[_val += _1]);
 }
