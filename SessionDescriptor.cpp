@@ -70,22 +70,24 @@ SessionDescriptor::~SessionDescriptor() {
 SessionDescriptor::operator std::string() {
     std::stringstream ss;
     /* v= */
-    ss << "v=" << data.protocolVersion << "\n";
+    ss << "v=" << data.protocolVersion       << "\n";
 
     /* o= */
-    ss << "o=" << data.origin.username << " "
-               << data.origin.sessionID << " "
+    ss << "o=" << data.origin.username       << " "
+               << data.origin.sessionID      << " "
                << data.origin.sessionVersion << " "
-               << data.origin.netType << " "
-               << data.origin.addressType << " "
+               << data.origin.netType        << " "
+               << data.origin.addressType    << " "
                << data.origin.unicastAddress << "\n";
 
+    /* s= */
+    ss << "s=" << data.sessionName           << "\n";
+    
     /* t= */
-    ss << "s=" << data.sessionName << "\n";
     for(std::vector<Time>::iterator i = data.time.begin();
         i != data.time.end(); i++) {
         ss << "t=" << i->startTime << " "
-                   << i->stopTime << "\n";
+                   << i->stopTime  << "\n";
     }
 
     /* a= */
@@ -104,7 +106,7 @@ SessionDescriptor::operator std::string() {
 
         /* m= */
         ss << "m=" << i->media.mediaName << " "
-                   << i->media.port << " "
+                   << i->media.port      << " "
                    << i->media.protocolName;
         for(std::vector<std::string>::iterator j = i->media.formats.begin();
             j != i->media.formats.end(); j++) {
@@ -115,9 +117,9 @@ SessionDescriptor::operator std::string() {
         /* c= */
         for(std::vector<ConnectionData>::iterator j = i->connectionData.begin();
             j != i->connectionData.end(); j++) {
-            ss << "c=" << j->netType << " "
-                              << j->addressType << " "
-                              << j->connectionAddress << "\n";
+            ss << "c=" << j->netType           << " "
+                       << j->addressType       << " "
+                       << j->connectionAddress << "\n";
         }
 
         /* a= */
@@ -129,7 +131,7 @@ SessionDescriptor::operator std::string() {
                 ss << "a=" << *at << "\n";
             else if(ValuedAttribute* at = boost::get<ValuedAttribute>(&v))
                 ss << "a=" << boost::fusion::at_c<0>(*at) << ":"
-                                  << boost::fusion::at_c<1>(*at) << "\n";
+                           << boost::fusion::at_c<1>(*at) << "\n";
         }
     }
     return ss.str();
