@@ -21,6 +21,8 @@
  *              ConnectionPeer object.
 **/
 
+#pragma once
+
 /* firebreath headers */
 #include "JSAPIAuto.h"
 #include "JSObject.h"

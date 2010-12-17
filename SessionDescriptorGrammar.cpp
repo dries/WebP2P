@@ -46,8 +46,10 @@ SessionDescriptorGrammar::SessionDescriptorGrammar() :
     **/
     using           boost::spirit::qi::iso8859_1::string;
     using           boost::spirit::qi::iso8859_1::char_;
+    using           boost::spirit::qi::iso8859_1::space;
     using namespace boost::spirit::qi::iso8859_1;
     using namespace boost::spirit::qi;
+    using           boost::spirit::eol;
     using namespace boost::phoenix;
     using namespace boost::phoenix::local_names;
 
@@ -67,115 +69,122 @@ SessionDescriptorGrammar::SessionDescriptorGrammar() :
     );
     
     /* The start symbol */
-    session_description  = proto_version
-                        >> origin_field
-                        >> session_name_field
-                        >> information_field
-                        >> uri_field
-                        >> email_fields
-                        >> phone_fields
-                        >> connection_field
-                        >> bandwidth_fields
-                        >> time_fields
-                        >> key_field
-                        >> attribute_fields
-                        >> media_descriptions;
+    session_description  %= proto_version
+                         >> origin_field
+                         >> session_name_field
+//                         >> information_field
+//                         >> uri_field
+//                         >> email_fields
+//                         >> phone_fields
+//                         >> -connection_field
+//                         >> bandwidth_fields
+                         >> time_fields
+//                         >> key_field
+                         >> attribute_fields
+                         >> media_descriptions;
 
     /* SDP fields */
-    proto_version        =   lit("v=")
-                        >> +abnf.DIGIT >> (abnf.CRLF | abnf.LF);
-    origin_field         =   lit("o=")
-                        >> username >> abnf.SP
-                        >> sess_id >> abnf.SP
-                        >> sess_version >> abnf.SP
-                        >> nettype >> abnf.SP
-                        >> addrtype >> abnf.SP
-                        >> sdp.unicast_address >> (abnf.CRLF | abnf.LF);
-    session_name_field   =   lit("s=")
-                        >> sdp.text >> (abnf.CRLF | abnf.LF);
-    information_field    = -(lit("i=")
-                        >> sdp.text >> (abnf.CRLF | abnf.LF));
-    uri_field            = -(lit("u=")
-                        >> uri >> (abnf.CRLF | abnf.LF));
-    email_fields         = *(lit("e=")
-                        >> email_address >> (abnf.CRLF | abnf.LF));
-    phone_fields         = *(lit("p=")
-                        >> phone_number >> (abnf.CRLF | abnf.LF));
-    connection_field     = -(lit("c=")
-                        >> nettype >> abnf.SP
-                        >> addrtype >> abnf.SP
-                        >> connection_address >> (abnf.CRLF | abnf.LF));
-                        // a connection field must be present in every media
-                        // description or at the session-level
-    bandwidth_fields     = *(lit("b=")
-                        >> bwtype >> lit(":") 
-                        >> bandwidth >> (abnf.CRLF | abnf.LF));
-    time_fields          = +(lit("t=")
-                        >> start_time >> abnf.SP >> stop_time 
-                        >> *((abnf.CRLF | abnf.LF) >> repeat_fields)
-                        >> (abnf.CRLF | abnf.LF))
-                        >> -(zone_adjustments >> (abnf.CRLF | abnf.LF));
-    repeat_fields        =   lit("r=")
-                        >> repeat_interval >> abnf.SP
-                        >> typed_time >> +(abnf.SP >> typed_time);
-    zone_adjustments     =   lit("z=")
-                        >> time >> abnf.SP 
-                        >> -lit("-") >> typed_time 
-                        >> *(abnf.SP >> time 
-                        >> abnf.SP >> -lit("-") >> typed_time);
-    key_field            = -(lit("k=")
-                        >> key_type >> (abnf.CRLF | abnf.LF));
-    attribute_fields     = *(lit("a=")
-                        >> attribute >> (abnf.CRLF | abnf.LF));
-    media_descriptions   = *(media_field
-                        >> information_field
-                        >> *connection_field
-                        >> bandwidth_fields
-                        >> key_field
-                        >> attribute_fields);
-    media_field          =   lit("m=")
-                        >> media >> abnf.SP 
-                        >> port >> -(lit('/') >> sdp.integer) >> abnf.SP 
-                        >> proto >> +(abnf.SP >> fmt) >> (abnf.CRLF | abnf.LF);                           
+    proto_version        %=   lit("v=")
+                         >> ulong_long          >> eol;
+    origin_field         %=   lit("o=")
+                         >> username            >> lit(' ')
+                         >> sess_id             >> lit(' ')
+                         >> sess_version        >> lit(' ')
+                         >> nettype             >> lit(' ')
+                         >> addrtype            >> lit(' ')
+                         >> sdp.unicast_address >> eol;
+    session_name_field   %=   lit("s=")
+                         >> sdp.text            >> eol;
+    information_field    %= -(lit("i=")
+                         >> sdp.text            >> eol);
+    uri_field            %= -(lit("u=")
+                         >> uri                 >> eol);
+    email_fields         %= *(lit("e=")
+                         >> email_address       >> eol);
+    phone_fields         %= *(lit("p=")
+                         >> phone_number        >> eol);
+    connection_field     %=   lit("c=")
+                         >> nettype             >> lit(' ')
+                         >> addrtype            >> lit(' ')
+                         >> connection_address  >> eol;
+                         // a connection field must be present in every media
+                         // description or at the session-level
+    bandwidth_fields     %= *(lit("b=")
+                         >> bwtype              >> lit(':') 
+                         >> bandwidth           >> eol);
+    time_fields          %= +(lit("t=")
+                         >> start_time          >> lit(' ')
+                         >> stop_time 
+/*                         >> *(eol >> repeat_fields)*/
+                         >> eol)
+/*                         >> -(zone_adjustments  >> eol)*/;
+    repeat_fields        %=   lit("r=")
+                         >> repeat_interval     >> lit(' ')
+                         >> typed_time          >> +(lit(' ') >> typed_time);
+    zone_adjustments     %=   lit("z=")
+                         >> ulong_long          >> lit(' ') 
+                         >> long_long           %  lit(' ');
+                         // TODO: parse typed-time
+    key_field            %= -(lit("k=")
+                         >> key_type            >> eol);
+    attribute_fields     %= *(lit("a=")
+                         >> attribute           >> eol);
+    media_descriptions   %= *(media_field
+//                         >> information_field
+                         >> *connection_field
+//                         >> bandwidth_fields
+//                         >> key_field
+                         >> attribute_fields);
+    media_field          %=   lit("m=")
+                         >> media >> lit(' ') 
+                         >> port /*>> -(lit('/') >> sdp.integer)*/ >> lit(' ') 
+                         >> proto >> +(lit(' ') >> fmt) >> eol;                           
 
     /* sub-rules of 'o=' */
-    username             = sdp.non_ws_string.alias();
-                        // pretty wide definition, but doesn't include space
-    sess_id              = +abnf.DIGIT;
-                        // should be unique for this username/host
-    sess_version         = +abnf.DIGIT;
-    nettype              = sdp.token.alias();
-                        // typically "IN"
-    addrtype             = sdp.token.alias();
-                        // typically "IP4" or "IP6"
+    username             %= sdp.non_ws_string.alias();
+                         // pretty wide definition, but doesn't include space
+    sess_id              %= ulong_long;
+                         // should be unique for this username/host
+    sess_version         %= ulong_long;
+    nettype              %= sdp.token.alias();
+                         // typically "IN"
+    addrtype             %= sdp.token.alias();
+                         // typically "IP4" or "IP6"
 
     /* sub-rules of 'u=' */
-    uri                  = URI_reference; // see RFC 3986
+    uri                  %= URI_reference; // see RFC 3986
 
     /* sub-rules of 'e=', see RFC 2822 for definitions */
-    email_address        = dispname_and_address
-                         | address_and_comment
-                         | addr_spec;
-    address_and_comment  = addr_spec >> +abnf.SP 
-                        >> char_('(') >> +sdp.email_safe >> char_(')');
-    dispname_and_address = +sdp.email_safe >> +abnf.SP
-                        >> char_('<') >> addr_spec >> char_('>');
+    email_address        %= dispname_and_address
+                          | address_and_comment
+                          | addr_spec;
+    address_and_comment  %= addr_spec
+                         >> +abnf.SP 
+                         >> char_('(')
+                         >> +sdp.email_safe
+                         >> char_(')');
+    dispname_and_address %= +sdp.email_safe
+                         >> +abnf.SP
+                         >> char_('<')
+                         >> addr_spec
+                         >> char_('>');
 
     /* sub-rules of 'p=' */
-    phone_number         = (phone >> *abnf.SP >> char_('(') 
-                        >> +sdp.email_safe >> char_(')')) 
-                         | (+sdp.email_safe >> char_('<') 
-                        >> phone >> char_('>'))
-                         | phone;
-    phone                = -char_('+') >> abnf.DIGIT 
-                        >> +(abnf.SP | char_('-') | abnf.DIGIT);
+    phone_number         %= (phone >> *abnf.SP >> char_('(') 
+                                               >> +sdp.email_safe >> char_(')')) 
+                          | (+sdp.email_safe >> char_('<') 
+                                                         >> phone >> char_('>'))
+                          | phone;
+    phone                %= -char_('+') >> abnf.DIGIT 
+                                        >> +(abnf.SP | char_('-') | abnf.DIGIT);
 
     /* sub-rules of 'c=' */
-    connection_address   = sdp.unicast_address | sdp.multicast_address;
+    connection_address   %= sdp.unicast_address
+                          | sdp.multicast_address;
 
     /* sub-rules of 'b=' */
-    bwtype               = sdp.token.alias();
-    bandwidth            = +abnf.DIGIT;
+    bwtype               %= sdp.token.alias();
+    bandwidth            %= ulong_long;
 
     /* sub-rules of 't=' */
     /* Decimal representation of NTP time in seconds since 1900.  The
@@ -183,43 +192,49 @@ SessionDescriptorGrammar::SessionDescriptorGrammar() :
      * least 10 digits.  Unlike the 64-bit representation used elsewhere, time
      * in SDP does not wrap in the year 2036. -- ANNOYING!
      */
-    start_time           = time | char_('0');
-    stop_time            = time | char_('0');
-    time                 = sdp.POS_DIGIT >> repeat(9, inf)[abnf.DIGIT];
+    start_time           %= ulong_long;
+    stop_time            %= ulong_long;
+    time                 %= ulong_long;
 
     /* sub-rules of 'r=' and 'z=' */
-    repeat_interval      = sdp.POS_DIGIT >> *abnf.DIGIT >> -fixed_len_time_unit;
-    typed_time           = +abnf.DIGIT >> -fixed_len_time_unit;
-    fixed_len_time_unit  = char_('d') | char_('h') | char_('m') | char_('s');
+    repeat_interval      %= ulong_long
+                         >> -fixed_len_time_unit;
+    typed_time           %= ulong_long
+                         >> -fixed_len_time_unit;
+    fixed_len_time_unit  %= char_('d')
+                          | char_('h')
+                          | char_('m')
+                          | char_('s');
 
     /* sub-rules of 'k=' */
-    key_type             = string("prompt") 
-                         | string("clear:") 
-                         | string("base64:")
-                         | string("uri:");
-    base64_char          = abnf.ALPHA 
-                         | abnf.DIGIT
-                         | char_('+') 
-                         | char_('/');
-    base64_unit          = repeat(4)[base64_char];
-    base64_pad           = repeat(2)[base64_char] >> repeat(2)[char_('=')] 
-                         | repeat(3)[base64_char] >> char_('=');
-    base64               = *base64_unit >> -base64_pad;
+    key_type             %=  string("prompt") 
+                          | (string("clear:") >> sdp.text)
+                          | (string("base64:") >> base64)
+                          | (string("uri:") >> uri);
+    base64_char          %= abnf.ALPHA 
+                          | abnf.DIGIT
+                          | char_('+') 
+                          | char_('/');
+    base64_unit          %= repeat(4)[base64_char];
+    base64_pad           %= repeat(2)[base64_char] >> repeat(2)[char_('=')] 
+                          | repeat(3)[base64_char] >> char_('=');
+    base64               %= *base64_unit >> -base64_pad;
 
     /* sub-rules of 'a=' */
-    attribute            = (att_field >> char_(':') >> att_value) | att_field;
-    att_field            = sdp.token.alias();
-    att_value            = sdp.byte_string.alias();
+    attribute            %= (att_field >> lit(':') >> att_value) | att_field;
+    att_field            %= sdp.token.alias();
+    att_value            %= sdp.byte_string.alias();
 
     /* sub-rules of 'm=' */
-    media                = sdp.token.alias();
-                        // typically "audio", "video", "text", or "application"
-    fmt                  = sdp.token.alias();
-                        // typically an RTP payload type for audio and video
-                        // media
-    proto                = sdp.token >> *(char_('/') >> sdp.token); 
-                        // typically "RTP/AVP" or "udp"
-    port                 = +abnf.DIGIT;
+    media                %= sdp.token.alias();
+                         // typically "audio", "video", "text", or "application"
+    fmt                  %= sdp.token.alias();
+                         // typically an RTP payload type for audio and video
+                         // media
+    proto                 = sdp.token[_val += _1]
+                         >> *(char_('/')[_val += _1] >> sdp.token[_val += _1]); 
+                         // typically "RTP/AVP" or "udp"
+    port                 %= ushort_;
 
 
     /* naming */

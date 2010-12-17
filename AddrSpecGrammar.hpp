@@ -23,29 +23,11 @@
 
 #pragma once
 
-/* Boost includes */
-#include <boost/fusion/include/adapt_struct.hpp>
-
 /* WebP2P includes */
 #include "ABNFCoreGrammar.hpp"
 
-struct AddrSpec {
-    std::string localPart;
-    std::string domain;
-    
-    std::string toString() {
-        return localPart + std::string("@") + domain;
-    }
-};
-
-BOOST_FUSION_ADAPT_STRUCT(
-    AddrSpec,
-    (std::string, localPart)
-    (std::string, domain)
-)
-
 struct AddrSpecGrammar :
-    boost::spirit::qi::grammar<std::string::const_iterator, AddrSpec()> {
+    boost::spirit::qi::grammar<std::string::const_iterator, std::string()> {
     /* external grammars */
     ABNFCoreGrammar abnf;
 
@@ -55,10 +37,10 @@ struct AddrSpecGrammar :
         NO_WS_CTL, text, specials, quoted_pair, FWS, ctext, ccontent, comment,
         CFWS, atext, atom, dot_atom_text, dot_atom, qtext, qcontent,
         quoted_string, word, dtext, dcontent, domain_literal, domain,
-        local_part;
+        local_part, temp;
     
     /* start symbol for this grammar */
-    boost::spirit::qi::rule<std::string::const_iterator, AddrSpec()>
+    boost::spirit::qi::rule<std::string::const_iterator, std::string()>
         addr_spec;
     
     AddrSpecGrammar();

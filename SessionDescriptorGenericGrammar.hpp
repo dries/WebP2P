@@ -39,10 +39,10 @@ struct SessionDescriptorGenericGrammar {
     ABNFCoreGrammar                 abnf;
 
     /* rules for this grammar */
-    boost::spirit::qi::rule<std::string::const_iterator>
+    boost::spirit::qi::rule<std::string::const_iterator, std::string()>
         unicast_address, multicast_address, IP4_multicast, m1, IP6_multicast,
         bm, ttl, FQDN, IP4_address, b1, IP6_address, hexpart, hexseq, hex4,
-        extn_addr, text, byte_string, non_ws_string, token_char, token,
+        extn_addr, text, byte_string, non_ws_string, token,
         email_safe, integer, alpha_numeric, POS_DIGIT, decimal_uchar;
 
     SessionDescriptorGenericGrammar();

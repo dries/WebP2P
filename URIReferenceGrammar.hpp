@@ -27,21 +27,23 @@
 #include "ABNFCoreGrammar.hpp"
 
 struct URIReferenceGrammar :
-    boost::spirit::qi::grammar<std::string::const_iterator> {
+    boost::spirit::qi::grammar<std::string::const_iterator, std::string()> {
     /* external grammars */
     ABNFCoreGrammar abnf;
 
     /* rules for this grammar */
-    boost::spirit::qi::rule<std::string::const_iterator>
+    boost::spirit::qi::rule<std::string::const_iterator, std::string()>
         uri, hier_part, absolute_uri, relative_ref, relative_part, scheme,
-        authority, userinfo, host, port, ip_literal, ipvfuture, ipv6address,
-        h16, ls32, ipv4address, dec_octet, reg_name, path, path_abempty,
-        path_absolute, path_noscheme, path_rootless, path_empty, segment,
-        segment_nz, segment_nz_nc, pchar, query, fragment, pct_encoded,
-        unreserved, reserved, gen_delims, sub_delims;
-        
+        authority, userinfo, host, port, ip_literal, ipvfuture, ipv6address, i1,
+        i2, i3, i4, i5, i6, i7, i8, i9, r1, r2, r3, r4, r5, r6, h16, ls32,
+        ipv4address, dec_octet, reg_name, path, path_abempty, path_absolute,
+        path_noscheme, path_rootless, path_empty, segment, segment_nz,
+        segment_nz_nc, pchar, query, fragment, pct_encoded, unreserved,
+        reserved, gen_delims, sub_delims;
+
     /* start symbol for this grammar */
-    boost::spirit::qi::rule<std::string::const_iterator> uri_reference;
+    boost::spirit::qi::rule<std::string::const_iterator, std::string()>
+        uri_reference;
 
 	/* Grammar constructor */
 	URIReferenceGrammar();

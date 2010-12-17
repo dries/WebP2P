@@ -20,10 +20,18 @@
  * Description: Description of the data structure for SDP.
 **/
 
+#pragma once
+
 /* STL includes */
 #include <string>
 #include <vector>
 #include <map>
+
+/* Boost includes */
+#include <boost/fusion/include/adapt_struct.hpp>
+#include <boost/fusion/include/vector.hpp>
+#include <boost/variant.hpp>
+
  
 enum NetType {
     INTERNET /* IN */ };
@@ -55,21 +63,11 @@ enum MediaType {
     MESSAGE };
     
 struct UnicastAddress {
-    UnicastAddress() :
-        isFQDN(true),
-		address("localhost")
-		{}
 	bool        isFQDN;
 	std::string address;
 };
 
 struct ConnectionAddress {
-    ConnectionAddress() :
-		castType(UNICAST),
-		address("localhost"),
-		ttl(0),
-		numberOfAddresses(1)
-		{}
 	CastType      castType;
 	std::string   address;
 	unsigned char ttl;
@@ -77,129 +75,134 @@ struct ConnectionAddress {
 };
 
 struct Origin {
-	Origin() :
-		username("-"),
-		sessionID(0),
-		sessioVersion(0),
-		netType(INTERNET),
-		addressType(IP4),
-		unicastAddress()
-		{}
 	std::string        username;
 	unsigned long long sessionID;
-	unsigned long long sessioVersion;
-	NetType            netType;
-	AddressType        addressType;
-	UnicastAddress     unicastAddress;
+	unsigned long long sessionVersion;
+	std::string        netType;
+	std::string        addressType;
+	std::string        unicastAddress;
 };
+
+BOOST_FUSION_ADAPT_STRUCT(
+    Origin,
+    (std::string,        username)
+    (unsigned long long, sessionID)
+    (unsigned long long, sessionVersion)
+    (std::string,        netType)
+    (std::string,        addressType)
+    (std::string,        unicastAddress)
+)
 
 struct ConnectionData {
-	ConnectionData() :
-		netType(INTERNET),
-		addressType(IP4),
-		connectionAddress()
-		{}
-	NetType           netType;
-	AddressType       addressType;
-	ConnectionAddress connectionAddress;
+	std::string       netType;
+	std::string       addressType;
+	std::string       connectionAddress;
 };
+
+BOOST_FUSION_ADAPT_STRUCT(
+    ConnectionData,
+    (std::string,     netType)
+    (std::string,     addressType)
+    (std::string,     connectionAddress)
+)
 
 struct Bandwidth {
-    Bandwidth() :
-    	bandwidthType(APPLICATION_SPECIFIC),
-		bandwidthTypeName("AS"),
-		bandwidth(0)
-		{}
-	BandwidthType bandwidthType;
-	std::string   bandwidthTypeName;
-	unsigned int  bandwidth;
+	BandwidthType      bandwidthType;
+	std::string        bandwidthTypeName;
+	unsigned long long bandwidth;
 };
 
-struct Timing {
-    Timing() :
-		startTime(0),
-		stopTime(0),
-		repeats()
-		{}
+BOOST_FUSION_ADAPT_STRUCT(
+    Bandwidth,
+    (std::string,        bandwidthTypeName)
+    (unsigned long long, bandwidth)
+)
+
+struct TypedTime {
+    unsigned long long time;
+    std::string        timeUnit;
+};
+
+BOOST_FUSION_ADAPT_STRUCT(
+    TypedTime,
+    (unsigned long long, time)
+    (std::string,        timeUnit)
+)
+
+struct Time {
 	unsigned long long startTime;
 	unsigned long long stopTime;
     
     /* r= */
-        struct RepeatTimes {
-        RepeatTimes() :
-            repeatInterval(0),
-            activeDuration(0),
-            offsetsFromStartTime()
-            {}
-        unsigned long long              repeatInterval;
-        unsigned long long              activeDuration;
-        std::vector<unsigned long long> offsetsFromStartTime;
-    };
-
-    std::vector<RepeatTimes>  repeats;
+//    std::vector<RepeatTimes>  repeats;
 };
 
+BOOST_FUSION_ADAPT_STRUCT(
+    Time,
+    (unsigned long long, startTime)
+    (unsigned long long, stopTime)
+)
 
-
-struct TimeZones {
-    TimeZones() :
-        adjustmentTimeAndOffsets()
-        {}
-    std::vector<std::pair<unsigned long long, long long> > adjustmentTimeAndOffsets;
+struct RepeatTimes {
+    unsigned long long              repeatInterval;
+    unsigned long long              activeDuration;
+    std::vector<unsigned long long> offsetsFromStartTime;
 };
+
+typedef boost::fusion::vector<unsigned long long, long long> ZoneAdjustment;
 
 struct EncryptionKey {
-    EncryptionKey() :
-        method(BASE64),
-		key("")
-		{}
-    EncryptionKeyMethod method;
+    std::string         methodName;
     std::string         key;
 };
 
-struct MediaDefinition {
-    MediaDefinition() :
-        type(APPLICATION),
-        port(49170),
-        numberOfPorts(1),
-        transportProtocol("udp"),
-        format("0"),
-        mediaInformation(),
-        connectionData(),
-        mediaAttributes()
-        {}
-    MediaType                          type;
-    unsigned int                       port;
-    unsigned int                       numberOfPorts;
-	std::string                        transportProtocol;
-    std::string                        format;
+BOOST_FUSION_ADAPT_STRUCT(
+    EncryptionKey,
+    (std::string, methodName)
+    (std::string, key)
+)
 
+typedef boost::fusion::vector<std::string, std::string> ValuedAttribute;
+typedef std::string PropertyAttribute;
+typedef boost::variant<ValuedAttribute, PropertyAttribute> Attribute;
+
+struct Media {
+    std::string                 mediaName;
+    unsigned short              port;
+//    unsigned short              numberOfPorts;
+    std::string                 protocolName;
+    std::vector<std::string>    formats;
+};
+
+BOOST_FUSION_ADAPT_STRUCT(
+    Media,
+    (std::string, mediaName)
+    (unsigned short, port)
+    (std::string, protocolName)
+    (std::vector<std::string>, formats)
+)
+
+struct MediaDescription {
+    /* m= */
+    Media                              media;
+    
     /* i= */
-	std::string                        mediaInformation;
+//	std::string                        mediaInformation;
 	/* c= */
 	std::vector<ConnectionData>        connectionData;
 	/* k= */
-	std::map<std::string, std::string> mediaAttributes;
+	std::vector<Attribute>             mediaAttributes;
 };
+
+BOOST_FUSION_ADAPT_STRUCT(
+    MediaDescription,
+    (Media, media)
+    (std::vector<ConnectionData>, connectionData)
+    (std::vector<Attribute>, mediaAttributes)
+)
 	
 
 struct SessionDescriptorData {
-	SessionDescriptorData() :
-		protocolVersion(0),
-		origin(),
-		sessionName(" "),
-		sessionInformation(""),
-		uri(""),
-		emailAddresses(),
-		phoneNumbers(),
-		connectionData(),
-		bandwidth(),
-		timings(),
-		timeZones(),
-		encryptionKey(),
-		sessionAttributes(),
-		mediaDefinitions() {}
-        
     /* v= */
 	unsigned long long                 protocolVersion;
 
@@ -210,36 +213,46 @@ struct SessionDescriptorData {
 	std::string                        sessionName;
     
     /* i= */
-	std::string                        sessionInformation;
+//	std::string                        sessionInformation;
     
     /* u= */
-	std::string                        uri;
+//	std::string                        uri;
     
     /* e= */
-	std::vector<std::string>           emailAddresses;
+//	std::vector<std::string>           emailAddresses;
 	
 	/* p= */
-	std::vector<std::string>           phoneNumbers;
+//	std::vector<std::string>           phoneNumbers;
     
     /* c= */
-    ConnectionData                     connectionData;
+//    ConnectionData                     connectionData;
     
     /* b= */
-    std::vector<Bandwidth>             bandwidth;
+//    std::vector<Bandwidth>             bandwidth;
     
     /* t= */
-   	std::vector<Timing>                timings;
+   	std::vector<Time>                  time;
     
     /* z= */
-    TimeZones                          timeZones;
+//    ZoneAdjustments                    zoneAdjustments;
     
     /* k= */
-    EncryptionKey                      encryptionKey;
+//    EncryptionKey                      encryptionKey;
     
 	/* a= */
-	std::map<std::string, std::string> sessionAttributes;
+	std::vector<Attribute>             sessionAttributes;
     
     /* m= */
-    std::vector<MediaDefinition>       mediaDefinitions;
+    std::vector<MediaDescription>      mediaDescriptions;
 };
+
+BOOST_FUSION_ADAPT_STRUCT(
+    SessionDescriptorData,
+    (unsigned long long, protocolVersion)
+    (Origin, origin)
+    (std::string, sessionName)
+    (std::vector<Time>, time)
+    (std::vector<Attribute>, sessionAttributes)
+  (std::vector<MediaDescription>, mediaDescriptions)
+)
 

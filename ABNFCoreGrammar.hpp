@@ -31,6 +31,7 @@
 #include <boost/spirit/include/qi.hpp>
 #include <boost/spirit/include/qi_repeat.hpp>
 #include <boost/spirit/include/qi_binary.hpp>
+#include <boost/fusion/include/vector.hpp>
 #include <boost/spirit/home/phoenix/core.hpp>
 #include <boost/spirit/home/phoenix/function.hpp>
 #include <boost/spirit/home/phoenix/operator.hpp>
@@ -38,13 +39,28 @@
 #include <boost/spirit/home/phoenix/scope.hpp>
 #include <boost/spirit/home/phoenix/bind.hpp>
 
-using namespace boost::phoenix;
+namespace boost { namespace spirit { namespace traits {
+    template <>
+    struct assign_to_attribute_from_value<std::string, char, void> {
+        static void call(char const& val, std::string& attr) {
+            attr += val;
+        }
+    };
+    
+    template <>
+    struct transform_attribute<char, std::string, qi::domain> {
+        typedef std::string type;
+        static type pre(char& val) { return std::string(&val, 1); }
+        static void post(char& val, type attr) {}
+        static void fail(char&) {}
+    };
+}}}
 
 struct ABNFCoreGrammar {
     /* rules for this grammar */
     boost::spirit::qi::rule<std::string::const_iterator, std::string()>
-        CHAR, VCHAR, DIGIT, BIT, OCTET, CTL, ALPHA,
-        SP, CR, LF, HTAB, DQUOTE, HEXDIG, WSP, CRLF, LWSP;
+        CHAR, VCHAR, DIGIT, BIT, OCTET, CTL, ALPHA, SP, CR, LF, HTAB, DQUOTE,
+        HEXDIG, WSP, CRLF, LWSP;
 
     ABNFCoreGrammar();
 };

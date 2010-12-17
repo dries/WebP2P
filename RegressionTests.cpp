@@ -28,8 +28,7 @@
 /* Boost includes */
 #include <boost/thread/thread.hpp>
 #include <boost/spirit/home/phoenix/container.hpp>
-
-#include <boost/spirit/include/karma_generate.hpp>
+#include <boost/spirit/include/karma.hpp>
 
 /* Firebreath includes */
 #include "variant_list.h"
@@ -71,6 +70,7 @@ struct GrammarTests {
     template<typename F> static void runTests(F callback) {
         runAddrSpecTests(callback);
         runSessionDescriptorGenericGrammarTests(callback);
+        runURIReferenceGrammarTests(callback);
         runSessionDescriptorGrammarTests(callback);
     }
     
@@ -118,6 +118,13 @@ struct GrammarTests {
         grammarTest("!addr-spec", "! \"#$%(),/;<>[]`|@invalidCharsInLocal.org", asg.addr_spec, callback, false);
         grammarTest("!addr-spec", "invalidCharsInDomain@! \"#$%(),/;<>_[]`|.org", asg.addr_spec, callback, false);
 //        grammarTest("!addr-spec", "local@SecondLevelDomainNamesAreInvalidIfTheyAreLongerThan64Charactersss.org", asg.addr_spec, callback, false);
+    }
+    
+    template<typename F> static void runURIReferenceGrammarTests(F callback) {
+        URIReferenceGrammar urg;
+        
+        grammarTest("URI-reference", "http://www.google.com/search?q=good+url+regex&rls=com.microsoft:*&ie=UTF-8&oe=UTF-8&startIndex=&startPage=1", urg.uri_reference, callback, true);
+        grammarTest("!URI-reference", "http://a:b:c?q/∫", urg.uri_reference, callback, false);
     }
     
     template<typename F> static void runSessionDescriptorGenericGrammarTests(F callback) {

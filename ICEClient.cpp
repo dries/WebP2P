@@ -23,6 +23,7 @@
 
 /* STL includes */
 #include <sstream>
+#include <string>
 
 /* WebP2P includes */
 #include "ICEClient.hpp"
@@ -479,6 +480,11 @@ std::string ICEClient::getLocalCandidates() {
 void ICEClient::addRemoteCandidates(const std::string& remoteCandidates) {
     try {
         SessionDescriptor remoteSDP = SessionDescriptor(remoteCandidates);
+        strcpy(rem.ufrag, "1eb4a64f");
+        strcpy(rem.pwd, "66129c48");
+        rem.comp_cnt = 1;
+        rem.cand_cnt = 5;
+        
     } catch (std::exception) {
     }
 }

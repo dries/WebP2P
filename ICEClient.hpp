@@ -21,6 +21,8 @@
  *              PJICE library.
 **/
 
+#pragma once
+
 /* STL headers */
 #include <string>
 

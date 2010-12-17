@@ -26,88 +26,104 @@
 
 SessionDescriptorGenericGrammar::SessionDescriptorGenericGrammar() {
     using           boost::spirit::qi::iso8859_1::char_;
+    using           boost::spirit::qi::iso8859_1::string;
     using namespace boost::spirit::qi::iso8859_1;
     using namespace boost::spirit::qi;
 
     /* generic sub-rules: addressing */
-    unicast_address      = IP4_address | IP6_address | FQDN | extn_addr;
-    multicast_address    = IP4_multicast | IP6_multicast | FQDN | extn_addr;
-    IP4_multicast        = m1 
+    unicast_address     %= IP4_address
+                         | IP6_address
+                         | FQDN
+                         | extn_addr;
+    multicast_address   %= IP4_multicast
+                         | IP6_multicast
+                         | FQDN
+                         | extn_addr;
+    IP4_multicast       %= m1 
                         >> char_('.') >> decimal_uchar
                         >> char_('.') >> decimal_uchar
                         >> char_('.') >> decimal_uchar
-                        >> char_('/') >> ttl >> -(char_('/') >> integer);
+                        >> char_('/') >> ttl
+                        >> -(char_('/') >> integer);
                         // IPv4 multicast addresses may be in the
                         // range 224.0.0.0 to 239.255.255.255
-    m1                   = (char_('2') >> char_('2') >> char_('4', '9'))
-                         | (char_('2') >> char_('3') >> abnf.DIGIT);
-    IP6_multicast        = hexpart >> -(char_('/') >> integer);
+    m1                  %= (char_('2') >> char_('2') >> char_('4', '9'))
+                         | (char_('2') >> char_('3') >> char_('0', '9'));
+    IP6_multicast       %= hexpart >> -(char_('/') >> integer);
                         // IPv6 address starting  with FF
-    bm                   = (char_('2') >> char_('2') >> char_('0', '4'))
-                         | (char_('2') >> char_('1') >> abnf.DIGIT)
-                         | (char_('2') >> char_('0') >> abnf.DIGIT)
-                         | (char_('1') >> abnf.DIGIT >> abnf.DIGIT)
-                         | (POS_DIGIT >> abnf.DIGIT)
-                         | abnf.DIGIT;
-    ttl                  = (POS_DIGIT >> repeat(0, 2)[abnf.DIGIT]) 
-                         | char_('0');
-    FQDN                 = repeat(4, inf)[alpha_numeric 
-                                                 | char_('-') | char_('.')];
+    bm                  %= (char_('2') >> char_('2')      >> char_('0', '4'))
+                         | (char_('2') >> char_('1')      >> char_('0', '9'))
+                         | (char_('2') >> char_('0')      >> char_('0', '9'))
+                         | (char_('1') >> char_('0', '9') >> char_('0', '9'))
+                         | (              char_('1', '9') >> char_('0', '9'))
+                         | (                                 char_('0', '9'));
+    ttl                 %= (char_('1', '9') >> char_('0', '9') 
+                                                             >> char_('0', '9'))
+                         | (char_('1', '9') >> char_('0', '9'))
+                         | (char_('0', '9'));
+    FQDN                %= repeat(4, inf)[alpha_numeric 
+                                                   | string("-") | string(".")];
                         // fully qualified domain name as specified
                         // in RFC 1035 (and updates)
-    IP4_address          = b1
-                         >> char_('.') >> decimal_uchar
-                         >> char_('.') >> decimal_uchar
-                         >> char_('.') >> decimal_uchar;
-    b1                   = decimal_uchar.alias();
+    IP4_address         %= b1
+                        >> char_('.') >> decimal_uchar
+                        >> char_('.') >> decimal_uchar
+                        >> char_('.') >> decimal_uchar;
+    b1                  %= decimal_uchar.alias();
                         // less than "224"
 
     /* The following is consistent with RFC 2373, Appendix B. */
-    IP6_address          = hexpart >> -(char_(':') >> IP4_address);
-    hexpart              = (hexseq  >> char_(':') >> char_(':') >> -hexseq)
-                         | (char_(':') >> char_(':') >> -hexseq)
-                         | hexseq;
-    hexseq               = hex4 >> *(lit(':') >> hex4);
-    hex4                 = repeat(1,4)[abnf.HEXDIG];
+    IP6_address         %= hexpart >> -(string(":") >> IP4_address);
+    hexpart             %= (hexseq  >> string("::") >> -hexseq)
+                         | (           string("::") >> -hexseq)
+                         | (                            hexseq);
+    hexseq              %= hex4 >> *(lit(":") >> hex4);
+    hex4                %= repeat(1,4)[abnf.HEXDIG];
 
     /* generic for other address families */
-    extn_addr            = non_ws_string.alias();
+    extn_addr           %= non_ws_string.alias();
 
     /* generic sub-rules: datatypes */
-    text                 = byte_string.alias();
+    text                %= byte_string.alias();
                         // default is to interpret this as UTF8 text.
                         // ISO 8859-1 requires "a=charset:ISO-8859-1"
                         // session-level attribute to be used
-    byte_string          = +(char_('\x00', '\x09')
+    byte_string         %= +(char_('\x00', '\x09')
                          |   char_('\x0B', '\x0C')
                          |   char_('\x0E', '\xFF'));
-    non_ws_string        = +(abnf.VCHAR | char_('\x80', '\xFF'));
+    non_ws_string       %= +(char_('\x21', '\x7E')
+                         |   char_('\x80', '\xFF'));
                         // string of visible characters
-    token_char           = char_('\x21') 
-                         | char_('\x23', '\x27') 
-                         | char_('\x2A', '\x2B')
-                         | char_('\x2D', '\x2E')
-                         | char_('\x30', '\x39')
-                         | char_('\x41', '\x5A')
-                         | char_('\x5E', '\x7E');
-    token                = +(token_char);
-    email_safe           = !(byte_('\x00')
-                         | byte_('\x0A')
-                         | byte_('\x0D')
-                         | byte_('\x28')
-                         | byte_('\x29')
-                         | byte_('\x3C')
-                         | byte_('\x3E'))
-                        >> byte_;
+    token               %= +(char_('\x21') 
+                         |   char_('\x23', '\x27') 
+                         |   char_('\x2A', '\x2B')
+                         |   char_('\x2D', '\x2E')
+                         |   char_('\x30', '\x39')
+                         |   char_('\x41', '\x5A')
+                         |   char_('\x5E', '\x7E'));
+    email_safe           = !(char_('\x00')
+                         |   char_('\x0A')
+                         |   char_('\x0D')
+                         |   char_('\x28')
+                         |   char_('\x29')
+                         |   char_('\x3C')
+                         |   char_('\x3E'))
+                        >> char_[_val += _1];
                         // any byte except NUL, CR, LF, or the quoting
                         // characters ()<>
-    integer              = ulong_long;
+    integer             %= char_('1', '9') 
+                        >> *char_('0', '9');
 
     /* generic sub-rules: primitives */
-    alpha_numeric        = abnf.ALPHA | abnf.DIGIT;
-    POS_DIGIT            = char_('1', '9');
-    uint_parser<unsigned char, 10, 1, 3> duParser;
-    decimal_uchar        = duParser;
+    alpha_numeric        = char_('\x41', '\x5A')[_val += _1]
+                         | char_('\x61', '\x7A')[_val += _1]
+                         | char_('0', '9')      [_val += _1];
+    POS_DIGIT            = char_('1', '9')      [_val += _1];
+    decimal_uchar       %= (char_('2') >> char_('5')      >> char_('0', '5'))
+                         | (char_('2') >> char_('0', '4') >> char_('0', '9'))
+                         | (char_('1') >> char_('0', '9') >> char_('0', '9'))
+                         | (              char_('0', '9') >> char_('0', '9'))
+                         | (                                 char_('0', '9'));
 
     unicast_address.name("unicast-address");
     multicast_address.name("multicast-address");
@@ -127,8 +143,6 @@ SessionDescriptorGenericGrammar::SessionDescriptorGenericGrammar() {
     text.name("text");
     byte_string.name("byte-string");
     non_ws_string.name("non-ws-string");
-    token_char.name("token-char");
-    token.name("token");
     email_safe.name("email-safe");
     integer.name("integer");
     alpha_numeric.name("alpha-numeric");

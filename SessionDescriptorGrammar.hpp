@@ -21,6 +21,8 @@
  * See:         http://tools.ietf.org/html/rfc4566
 **/
 
+#pragma once
+
 /* STL includes */
 #include <sstream>
 
@@ -29,6 +31,7 @@
 #include "AddrSpecGrammar.hpp"
 #include "URIReferenceGrammar.hpp"
 #include "SessionDescriptorGenericGrammar.hpp"
+#include "SessionDescriptorData.hpp"
  
 class ParseException : std::exception {
 private:
@@ -43,9 +46,13 @@ public:
         return errorDescription.c_str();
     }
 };
- 
+
+using boost::spirit::qi::rule;
+
 struct SessionDescriptorGrammar :
-    boost::spirit::qi::grammar<std::string::const_iterator> {
+    boost::spirit::qi::grammar<std::string::const_iterator, SessionDescriptorData()> {
+    typedef std::string::const_iterator it;
+
     /* external grammars */
     ABNFCoreGrammar                 abnf;
     AddrSpecGrammar                 addr_spec;
@@ -53,20 +60,57 @@ struct SessionDescriptorGrammar :
     SessionDescriptorGenericGrammar sdp;
     
     /* rules for this grammar */
-    boost::spirit::qi::rule<std::string::const_iterator>
-        proto_version, origin_field, session_name_field, information_field,
-        uri_field, email_fields, phone_fields, connection_field,
-        bandwidth_fields, time_fields, repeat_fields, zone_adjustments,
-        key_field, attribute_fields, media_descriptions, media_field, username,
-        sess_id, sess_version, nettype, addrtype, uri, email_address,
-        address_and_comment, dispname_and_address, phone_number, phone,
-        connection_address, bwtype, bandwidth, start_time, stop_time, time,
-        repeat_interval, typed_time, fixed_len_time_unit, key_type, base64_char,
-        base64_unit, base64_pad, base64, attribute, att_field, att_value, media,
-        fmt, proto, port;
+    rule<it, unsigned long long()>               proto_version;
+    rule<it, Origin()>                           origin_field;
+    rule<it, std::string()>                      session_name_field;
+    rule<it, std::string()>                      information_field;
+    rule<it, std::string()>                      uri_field;
+    rule<it, std::vector<std::string>()>         email_fields;
+    rule<it, std::vector<std::string>()>         phone_fields;
+    rule<it, ConnectionData()>                   connection_field;
+    rule<it, std::vector<Bandwidth>()>           bandwidth_fields;
+    rule<it, std::vector<Time>()>                time_fields;
+    rule<it/*, RepeatTimes() */>                     repeat_fields;
+    rule<it/*, ZoneAdjustment()*/>                   zone_adjustments;
+    rule<it/*, EncryptionKey()*/>                    key_field;
+    rule<it, std::vector<Attribute>()>           attribute_fields;
+    rule<it, std::vector<MediaDescription>()>    media_descriptions;
+    rule<it, Media()>                            media_field;
+    rule<it, std::string()>                      username;
+    rule<it, unsigned long long()>               sess_id;
+    rule<it, unsigned long long()>               sess_version;
+    rule<it, std::string()>                      nettype;
+    rule<it, std::string()>                      addrtype;
+    rule<it, std::string()>                      uri;
+    rule<it, std::string()>                      email_address;
+    rule<it, std::string()>                      address_and_comment;
+    rule<it, std::string()>                      dispname_and_address;
+    rule<it, std::string()>                      phone_number;
+    rule<it, std::string()>                      phone;
+    rule<it, std::string()>                      connection_address;
+    rule<it, std::string()>                      bwtype;
+    rule<it, unsigned long long()>               bandwidth;
+    rule<it, unsigned long long()>               start_time;
+    rule<it, unsigned long long()>               stop_time;
+    rule<it, unsigned long long()>               time;
+    rule<it, TypedTime()>                        repeat_interval;
+    rule<it, TypedTime()>                        typed_time;
+    rule<it, std::string()>                      fixed_len_time_unit;
+    rule<it, std::string()>                      key_type;
+    rule<it, std::string()>                      base64_char;
+    rule<it, std::string()>                      base64_unit;
+    rule<it, std::string()>                      base64_pad;
+    rule<it, std::string()>                      base64;
+    rule<it, Attribute()>                        attribute;
+    rule<it, std::string()>                      att_field;
+    rule<it, std::string()>                      att_value;
+    rule<it, std::string()>                      media;
+    rule<it, std::string()>                      fmt;
+    rule<it, std::string()>                      proto;
+    rule<it, unsigned short()>                   port;
 
     /* start symbol for this grammar */
-    boost::spirit::qi::rule<std::string::const_iterator/*, session_descriptor*/>
+    rule<std::string::const_iterator, SessionDescriptorData()>
         session_description;
     
     SessionDescriptorGrammar();
