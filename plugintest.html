@@ -3,19 +3,6 @@
 <title>Object test</title>
 <script>
 var cp;
-function pluginLoaded() {
-	window.ConnectionPeer = function(config) {
-		return document.getElementById('plugin').createConnectionPeer(config);
-	}
-	cp = new ConnectionPeer('');
-	cp.getLocalConfiguration(function(configuration) {
-		document.getElementById('local_sdp').innerHTML = configuration;
-		});
-}
-function addRemoteConfiguration() {
-	var config = document.getElementById('remote_sdp').value;
-	cp.addRemoteConfiguration(config);
-}
 function runRegressionTests() {
 	document.getElementById('plugin').createRegressionTests().runTests(
 		function(name, res) {
@@ -28,6 +15,32 @@ function runRegressionTests() {
 				+ res
 				+ '</pre></td></tr>';
 		});
+}
+function pluginLoaded() {
+	window.ConnectionPeer = function(config) {
+		return document.getElementById('plugin').createConnectionPeer(config);
+	}
+	cp = new ConnectionPeer('');
+	cp.onconnect = function() {
+		document.getElementById('status').innerHTML = "connected";
+	}
+	cp.ondisconnect = function() {
+		document.getElementById('status').innerHTML = "not connected";
+	}
+	cp.ontext = function(text) {
+		document.getElementById('data').innerHTML += text;
+	}
+	cp.getLocalConfiguration(function(configuration) {
+		document.getElementById('local_sdp').innerHTML = configuration;
+		});
+}
+function addRemoteConfiguration() {
+	var config = document.getElementById('remote_sdp').value;
+	cp.addRemoteConfiguration(config);
+}
+function sendText() {
+	var text = document.getElementById('data_input').value;
+	cp.sendText(text, true);
 }
 </script>
 </head>
@@ -45,6 +58,16 @@ function runRegressionTests() {
 <br />
 <input type="button" value="Add Remote SDP" onclick="addRemoteConfiguration();" />
 <br />
+
+<p>Status:</p>
+<div id="status">not connected</div>
+
+<p>Received data:</p>
+<pre id="data"></pre>
+
+<p>Send data:</p>
+<input type="text" id="data_input" /><input type="button" value="Send text" onclick="sendText();" />
+<br/>
 
 <object id="plugin" type="application/x-WebP2P" width="300" height="300">
     <param name="onload" value="pluginLoaded" />

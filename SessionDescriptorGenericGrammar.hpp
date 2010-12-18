@@ -41,9 +41,11 @@ struct SessionDescriptorGenericGrammar {
     /* rules for this grammar */
     boost::spirit::qi::rule<std::string::const_iterator, std::string()>
         unicast_address, multicast_address, IP4_multicast, m1, IP6_multicast,
-        bm, ttl, FQDN, IP4_address, b1, IP6_address, hexpart, hexseq, hex4,
+        bm, ttl, FQDN, IP4_address, bu, IP6_address, hexpart, hexseq, hex4,
         extn_addr, text, byte_string, non_ws_string, token,
-        email_safe, integer, alpha_numeric, POS_DIGIT, decimal_uchar;
+        email_safe, integer, alpha_numeric, POS_DIGIT, decimal_uchar,
+        du1, du2, du3, du4, du5, bm1, bm2, bm3, bm4, bm5, bu1, bu2, bu3, bu4,
+        bu5;
 
     SessionDescriptorGenericGrammar();
 };

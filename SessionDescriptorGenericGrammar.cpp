@@ -21,12 +21,16 @@
  * See:         http://tools.ietf.org/html/rfc4566
 **/
 
+/* Boost includes */
+#include <boost/spirit/home/phoenix.hpp>
+
 /* WebP2P includes */
 #include "SessionDescriptorGenericGrammar.hpp"
 
 SessionDescriptorGenericGrammar::SessionDescriptorGenericGrammar() {
     using           boost::spirit::qi::iso8859_1::char_;
     using           boost::spirit::qi::iso8859_1::string;
+    using           boost::spirit::qi::iso8859_1::digit;
     using namespace boost::spirit::qi::iso8859_1;
     using namespace boost::spirit::qi;
 
@@ -39,7 +43,7 @@ SessionDescriptorGenericGrammar::SessionDescriptorGenericGrammar() {
                          | IP6_multicast
                          | FQDN
                          | extn_addr;
-    IP4_multicast       %= m1 
+    IP4_multicast       %= bm 
                         >> char_('.') >> decimal_uchar
                         >> char_('.') >> decimal_uchar
                         >> char_('.') >> decimal_uchar
@@ -47,29 +51,28 @@ SessionDescriptorGenericGrammar::SessionDescriptorGenericGrammar() {
                         >> -(char_('/') >> integer);
                         // IPv4 multicast addresses may be in the
                         // range 224.0.0.0 to 239.255.255.255
-    m1                  %= (char_('2') >> char_('2') >> char_('4', '9'))
-                         | (char_('2') >> char_('3') >> char_('0', '9'));
+    bm1                 %= string("22") >> char_('4', '9');
+    bm2                 %= string("23") >> char_('0', '9');
+    bm                  %= bm1 | bm2;
     IP6_multicast       %= hexpart >> -(char_('/') >> integer);
                         // IPv6 address starting  with FF
-    bm                  %= (char_('2') >> char_('2')      >> char_('0', '4'))
-                         | (char_('2') >> char_('1')      >> char_('0', '9'))
-                         | (char_('2') >> char_('0')      >> char_('0', '9'))
-                         | (char_('1') >> char_('0', '9') >> char_('0', '9'))
-                         | (              char_('1', '9') >> char_('0', '9'))
-                         | (                                 char_('0', '9'));
-    ttl                 %= (char_('1', '9') >> char_('0', '9') 
-                                                             >> char_('0', '9'))
-                         | (char_('1', '9') >> char_('0', '9'))
-                         | (char_('0', '9'));
-    FQDN                %= repeat(4, inf)[alpha_numeric 
-                                                   | string("-") | string(".")];
+    ttl                  = +digit;
+    FQDN                 = repeat(4, inf)[
+                                alpha_numeric[_val += _1]
+                              | string("-")[_val += _1]
+                              | string(".")[_val += _1]];
                         // fully qualified domain name as specified
                         // in RFC 1035 (and updates)
-    IP4_address         %= b1
-                        >> char_('.') >> decimal_uchar
-                        >> char_('.') >> decimal_uchar
-                        >> char_('.') >> decimal_uchar;
-    b1                  %= decimal_uchar.alias();
+    IP4_address         %= +digit
+                        >> string(".") >> +digit
+                        >> string(".") >> +digit
+                        >> string(".") >> +digit;
+    bu1                 %= char_('2') >> char_('2')      >> char_('0', '3');
+    bu2                 %= char_('2') >> char_('0', '1') >> char_('0', '9');
+    bu3                 %= char_('1') >> char_('0', '9') >> char_('0', '9');
+    bu4                 %=               char_('0', '9') >> char_('0', '9');
+    bu5                 %=                                  char_('0', '9');
+    bu                  %= bu1 | bu2 | bu3 | bu4 | bu5;
                         // less than "224"
 
     /* The following is consistent with RFC 2373, Appendix B. */
@@ -119,22 +122,22 @@ SessionDescriptorGenericGrammar::SessionDescriptorGenericGrammar() {
                          | char_('\x61', '\x7A')[_val += _1]
                          | char_('0', '9')      [_val += _1];
     POS_DIGIT            = char_('1', '9')      [_val += _1];
-    decimal_uchar       %= (char_('2') >> char_('5')      >> char_('0', '5'))
-                         | (char_('2') >> char_('0', '4') >> char_('0', '9'))
-                         | (char_('1') >> char_('0', '9') >> char_('0', '9'))
-                         | (              char_('0', '9') >> char_('0', '9'))
-                         | (                                 char_('0', '9'));
+    du1                 %= char_('2') >> char_('5')      >> char_('0', '5');
+    du2                 %= char_('2') >> char_('0', '4') >> char_('0', '9');
+    du3                 %= char_('1') >> char_('0', '9') >> char_('0', '9');
+    du4                 %=               char_('0', '9') >> char_('0', '9');
+    du5                 %=                                  char_('0', '9');
+    decimal_uchar       %= du1 | du2 | du3 | du4 | du5;
 
     unicast_address.name("unicast-address");
     multicast_address.name("multicast-address");
     IP4_multicast.name("IP4-multicast");
-    m1.name("m1");
     IP6_multicast.name("IP6-multicast");
     bm.name("bm");
     ttl.name("ttl");
     FQDN.name("FQDN");
     IP4_address.name("IP4-address");
-    b1.name("b1");
+    bu.name("bu");
     IP6_address.name("IP6-address");
     hexpart.name("hexpart");
     hexseq.name("hexseq");

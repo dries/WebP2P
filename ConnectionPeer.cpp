@@ -65,7 +65,7 @@ ConnectionPeer::ConnectionPeer(const std::string& serverConfiguration) :
     registerEvent("onerror");
     registerEvent("ondisconnect");
 
-    iceClient.setLocalCandidateCallback(this);
+    iceClient.setCallbacks(this);
 }
 ConnectionPeer::~ConnectionPeer() {
 }
@@ -75,6 +75,7 @@ ConnectionPeer::~ConnectionPeer() {
 void ConnectionPeer::sendText(
 	const std::string& text,
 	const /*optional*/ bool unimportant) {
+    iceClient.sendMessage(text);
 }
 void ConnectionPeer::sendBitmap(
 	const FB::JSAPIPtr& /*HTMLImageElement*/ image) {
@@ -101,6 +102,12 @@ void ConnectionPeer::setLocalCandidates(
     this->localConfiguration = localConfiguration;
     localConfigurationCallback->Invoke(
     	"", FB::variant_list_of(localConfiguration));
+}
+void ConnectionPeer::negotiationComplete() {
+    FireEvent("onconnect", FB::variant_list_of(true));
+}
+void ConnectionPeer::dataReceived(const std::string& text) {
+    FireEvent("ontext", FB::variant_list_of(text));
 }
 
 void ConnectionPeer::getLocalConfiguration(

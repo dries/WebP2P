@@ -35,4 +35,5 @@ public:
     ~SessionDescriptor();	
     
     operator std::string();
+    SessionDescriptorData& getData();
 };

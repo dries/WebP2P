@@ -86,8 +86,8 @@ SessionDescriptor::operator std::string() {
     /* t= */
     for(std::vector<Time>::iterator i = data.time.begin();
         i != data.time.end(); i++) {
-        ss << "t=" << i->startTime << " "
-                   << i->stopTime  << "\n";
+        ss << "t=" << i->startTime           << " "
+                   << i->stopTime            << "\n";
     }
 
     /* a= */
@@ -95,7 +95,7 @@ SessionDescriptor::operator std::string() {
         i != data.sessionAttributes.end(); i++) {
         Attribute &v = *i;
         if(PropertyAttribute* at = boost::get<PropertyAttribute>(&v))
-            ss << "a=" << *at << "\n";
+            ss << "a=" << *at                         << "\n";
         else if(ValuedAttribute* at = boost::get<ValuedAttribute>(&v))
             ss << "a=" << boost::fusion::at_c<0>(*at) << ":"
                        << boost::fusion::at_c<1>(*at) << "\n";
@@ -135,4 +135,8 @@ SessionDescriptor::operator std::string() {
         }
     }
     return ss.str();
+}
+
+SessionDescriptorData& SessionDescriptor::getData() {
+    return data;
 }

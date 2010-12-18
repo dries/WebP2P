@@ -25,6 +25,7 @@
 
 /* STL headers */
 #include <string>
+#include <vector>
 
 /* Fix architecture detection for Win32 by forcing i386 */
 #ifdef WIN32
@@ -57,10 +58,22 @@ class ICEClient {
         const std::string& getTurnUsername();
         const std::string& getTurnPassword();
     };
+    
+    class RemoteConfiguration {
+    public:
+        std::string      ufrag;
+        std::string      pwd;
+        unsigned         comp_cnt;
+        unsigned         cand_cnt;
+        std::vector<pj_sockaddr> def_addr;
+        std::vector<pj_ice_sess_cand> cand;
+    };
 public:
-    class LocalCandidateCallback {
+    class Callbacks {
     public:
         virtual void setLocalCandidates(const std::string& localCandidates) = 0;
+        virtual void negotiationComplete() = 0;
+        virtual void dataReceived(const std::string& text) = 0;
     };
 private:
     /* PJNATH related stuff */
@@ -73,8 +86,8 @@ private:
     
     struct rem_info
     {
-        char             ufrag[80];
-        char             pwd[80];
+        std::string      ufrag;
+        std::string      pwd;
         unsigned         comp_cnt;
         pj_sockaddr      def_addr[PJ_ICE_MAX_COMP];
         unsigned         cand_cnt;
@@ -82,18 +95,24 @@ private:
     } rem;
     
     ServerConfiguration     serverConfiguration;
-    LocalCandidateCallback* localCandidateCallback;
+    RemoteConfiguration     remoteConfiguration;
     
     unsigned           comp_cnt;
+    
+public:
+    Callbacks* callbacks;
+
 public:
     ICEClient(const std::string& server_cfg);
     ~ICEClient();
     
     pj_bool_t handleEvents(unsigned max_msec, unsigned *p_count);
     
-    void setLocalCandidateCallback(LocalCandidateCallback* lcb);
+    void setCallbacks(Callbacks* callbacks);
     void deliverLocalCandidates();
     void addRemoteCandidates(const std::string& remoteCandidates);
+    
+    void sendMessage(std::string message);
     
 private:
     std::string initializeClient();

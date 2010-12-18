@@ -30,6 +30,7 @@
 /* Boost includes */
 #include <boost/fusion/include/adapt_struct.hpp>
 #include <boost/fusion/include/vector.hpp>
+#include <boost/fusion/sequence/intrinsic/at_c.hpp>
 #include <boost/variant.hpp>
 
  

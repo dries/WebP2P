@@ -24,6 +24,10 @@
 /* STL includes */
 #include <sstream>
 #include <string>
+#include <iostream>
+
+/* Boost includes */
+#include <boost/scoped_array.hpp>
 
 /* WebP2P includes */
 #include "ICEClient.hpp"
@@ -167,6 +171,10 @@ static void cb_on_rx_data(pj_ice_strans *ice_st,
     PJ_UNUSED_ARG(src_addr_len);
     PJ_UNUSED_ARG(pkt);
     
+    std::string receivedText((const char*)pkt, size);
+    static_cast<ICEClient*>(pj_ice_strans_get_user_data(ice_st))->
+            callbacks->dataReceived(receivedText);
+    
     // Don't do this! It will ruin the packet buffer in case TCP is used!
     //((char*)pkt)[size] = '\0';
     /*
@@ -189,16 +197,22 @@ static void cb_on_ice_complete(pj_ice_strans *ice_st,
         /* Initialization (candidate gathering) */
         static_cast<ICEClient*>(pj_ice_strans_get_user_data(ice_st))
         	->deliverLocalCandidates();
+        std::cout << "ICEClient: ICE Transport Initiated";
     }
     else if(op == PJ_ICE_STRANS_OP_NEGOTIATION) {
         /* Negotiation */
+        std::cout << "ICEClient: ICE Negotiation Complete";
+        static_cast<ICEClient*>(pj_ice_strans_get_user_data(ice_st))->
+            callbacks->negotiationComplete();
     }
     else if(op == PJ_ICE_STRANS_OP_KEEP_ALIVE) {
         /* This operation is used to report failure in keep-alive operation. */
         /* Currently it is only used to report TURN Refresh failure. */
+        std::cout << "ICEClient: Keep-alive failed";
     }
     else {
         /* Error */
+        std::cout << "ICEClient: Error in PJNATH library";
     }
 }
 
@@ -381,12 +395,12 @@ void ICEClient::shutdownSession() {
     resetRemoteCandidates();
 }
 
-void ICEClient::setLocalCandidateCallback(LocalCandidateCallback* lcb) {
+void ICEClient::setCallbacks(Callbacks* callbacks) {
     if(NULL == icest)
         initializeTransport();
 //    if(!pj_ice_strans_has_sess(icest))
 //        initializeSession();    
-    this->localCandidateCallback = lcb;
+    this->callbacks = callbacks;
 }
 
 void ICEClient::deliverLocalCandidates() {
@@ -394,7 +408,7 @@ void ICEClient::deliverLocalCandidates() {
         initializeSession(); 
 
     std::string localCandidates = getLocalCandidates();
-    localCandidateCallback->setLocalCandidates(localCandidates);
+    callbacks->setLocalCandidates(localCandidates);
 }
 
 std::string ICEClient::getLocalCandidates() {
@@ -480,13 +494,119 @@ std::string ICEClient::getLocalCandidates() {
 void ICEClient::addRemoteCandidates(const std::string& remoteCandidates) {
     try {
         SessionDescriptor remoteSDP = SessionDescriptor(remoteCandidates);
-        strcpy(rem.ufrag, "1eb4a64f");
-        strcpy(rem.pwd, "66129c48");
-        rem.comp_cnt = 1;
-        rem.cand_cnt = 5;
+        SessionDescriptorData& sdp = remoteSDP.getData();
+        for(std::vector<Attribute>::iterator i = sdp.sessionAttributes.begin();
+            i != sdp.sessionAttributes.end(); i++) {
+            if(ValuedAttribute* at = boost::get<ValuedAttribute>(&*i)) {
+                std::string attributeName = boost::fusion::at_c<0>(*at);
+                std::string attributeValue = boost::fusion::at_c<1>(*at);
+                if(attributeName ==  "ice-ufrag")
+                    remoteConfiguration.ufrag = attributeValue;
+                else if(attributeName == "ice-pwd")
+                    remoteConfiguration.pwd = attributeValue;
+            }
+        }
+
+        remoteConfiguration.comp_cnt = 0;
+        for(std::vector<MediaDescription>::iterator i = sdp.mediaDescriptions.begin();
+            i != sdp.mediaDescriptions.end(); i++) {
+            remoteConfiguration.comp_cnt++;
+            
+            if(i->connectionData.size() >= 1)
+            {
+                ConnectionData& cdata = i->connectionData[0];
+                if(cdata.netType == "IN")
+                {
+                    int af = (cdata.addressType == "IP4") ?
+                        pj_AF_INET() : pj_AF_INET6();
+                    pj_sockaddr addr;
+                    pj_sockaddr_init(af, &addr, NULL, 0);
+                    pj_str_t temp;
+                    pj_cstr(&temp, cdata.connectionAddress.data());
+                    pj_sockaddr_set_str_addr(af, &addr, &temp);
+                    remoteConfiguration.def_addr.push_back(addr);
+                }
+            }
+
+            for(std::vector<Attribute>::iterator j = i->mediaAttributes.begin();
+                j != i->mediaAttributes.end(); j++) {
+                if(ValuedAttribute* at = boost::get<ValuedAttribute>(&*j)) {
+                    std::string attributeName = boost::fusion::at_c<0>(*at);
+                    std::string attributeValue = boost::fusion::at_c<1>(*at);
+                    if(attributeName ==  "candidate") {
+                        std::stringstream ss(attributeValue);
+                        pj_ice_sess_cand cand;
+                        std::string foundation;
+                        int comp_id;
+                        std::string transport;
+                        int prio;
+                        std::string ipaddr;
+                        unsigned short port;
+                        std::string skip, type;
+                        ss >> foundation
+                           >> comp_id
+                           >> transport
+                           >> prio
+                           >> ipaddr
+                           >> port
+                           >> skip
+                           >> type;
+                        if(type == "host") {
+                            cand.type = PJ_ICE_CAND_TYPE_HOST;
+                        } else if(type == "srflx") {
+                            cand.type = PJ_ICE_CAND_TYPE_SRFLX;
+                        } else if(type == "relay") {
+                            cand.type = PJ_ICE_CAND_TYPE_RELAYED;
+                        }
+                        cand.comp_id = (pj_uint8_t) comp_id;
+                        cand.prio    = prio;
+                        pj_strdup2(pool, &cand.foundation, foundation.c_str());
+                        
+                        int af;
+                        if(ipaddr.find(":") == std::string::npos) {
+                            af = pj_AF_INET();
+                        } else {
+                            af = pj_AF_INET6();
+                        }
+                        
+                        pj_str_t temp;
+                        pj_cstr(&temp, ipaddr.c_str());
+                        pj_sockaddr_init(af, &cand.addr, NULL, 0);
+                        pj_sockaddr_set_str_addr(af, &cand.addr, &temp);
+                        pj_sockaddr_set_port(&cand.addr, (pj_uint16_t)port);
+                        remoteConfiguration.cand.push_back(cand);
+                    }
+                }
+            }
+        }
+        pj_str_t rufrag, rpwd;
+        pj_status_t status;
+        
+        int cand_cnt = remoteConfiguration.cand.size();        
+        boost::scoped_array<pj_ice_sess_cand> cand(new pj_ice_sess_cand[cand_cnt]);
+        for(int i = 0; i < cand_cnt; i++) {
+            cand[i] = remoteConfiguration.cand[i];
+        }
+        status = pj_ice_strans_start_ice(icest, 
+			pj_cstr(&rufrag, remoteConfiguration.ufrag.c_str()),
+			pj_cstr(&rpwd, remoteConfiguration.pwd.c_str()),
+			cand_cnt,
+			cand.get());
         
     } catch (std::exception) {
     }
+}
+
+void ICEClient::sendMessage(std::string message) {
+    pj_status_t status;
+    
+    status = pj_ice_strans_sendto(
+        icest,
+        1,
+        message.c_str(),
+        message.length(),
+        &remoteConfiguration.def_addr[0],
+        pj_sockaddr_get_len(&remoteConfiguration.def_addr[0]));
 }
 
 void ICEClient::resetRemoteCandidates() {

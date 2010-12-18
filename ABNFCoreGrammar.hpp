@@ -43,7 +43,7 @@ namespace boost { namespace spirit { namespace traits {
     template <>
     struct assign_to_attribute_from_value<std::string, char, void> {
         static void call(char const& val, std::string& attr) {
-            attr += val;
+            attr = val;
         }
     };
     

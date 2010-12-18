@@ -32,7 +32,7 @@
 
 class ConnectionPeer : 
 	public FB::JSAPIAuto,
-	public ICEClient::LocalCandidateCallback {
+	public ICEClient::Callbacks {
 private:
     ICEClient iceClient;
     
@@ -51,6 +51,8 @@ public:
     ~ConnectionPeer();
     
     virtual void setLocalCandidates(const std::string& localConfiguration);
+    virtual void negotiationComplete();
+    virtual void dataReceived(const std::string& text);
     
     // if second arg is true, then use unreliable low-latency transport 
     // (UDP-like), otherwise guarantee delivery (TCP-like)
