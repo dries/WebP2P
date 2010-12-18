@@ -28,7 +28,7 @@ function pluginLoaded() {
 		document.getElementById('status').innerHTML = "not connected";
 	}
 	cp.ontext = function(text) {
-		document.getElementById('data').innerHTML += text;
+		document.getElementById('data').innerHTML += "<pre>RECV:" + text + "</pre>";
 	}
 	cp.getLocalConfiguration(function(configuration) {
 		document.getElementById('local_sdp').innerHTML = configuration;
@@ -41,6 +41,7 @@ function addRemoteConfiguration() {
 function sendText() {
 	var text = document.getElementById('data_input').value;
 	cp.sendText(text, true);
+	document.getElementById('data').innerHTML += "<pre>SENT:" + text + "</pre>";
 }
 </script>
 </head>
@@ -60,13 +61,13 @@ function sendText() {
 <br />
 
 <p>Status:</p>
-<div id="status">not connected</div>
+<pre id="status">not connected</pre>
 
-<p>Received data:</p>
-<pre id="data"></pre>
-
-<p>Send data:</p>
-<input type="text" id="data_input" /><input type="button" value="Send text" onclick="sendText();" />
+<p>Exchanged data:</p>
+<div id="data"></div>
+<form onsubmit="sendText(); return false;">
+<input type="text" id="data_input" /><input type="submit" value="Send text" />
+</form>
 <br/>
 
 <object id="plugin" type="application/x-WebP2P" width="300" height="300">
