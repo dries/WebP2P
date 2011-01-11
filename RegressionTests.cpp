@@ -190,7 +190,7 @@ public:
         using namespace boost::phoenix::arg_names;
 
         GrammarTests::runTests(
-            bind(&TestRunner::reportTestResult, *this, arg1, arg2));
+            boost::phoenix::bind(&TestRunner::reportTestResult, *this, arg1, arg2));
     }
 
     void reportTestResult(
